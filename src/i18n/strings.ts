@@ -1,0 +1,72 @@
+export const strings = {
+  app: {
+    name: "Connex",
+    tagline: "Your smart badge for IRL connections.",
+  },
+  nav: {
+    home: "Home",
+    connections: "Connections",
+    scan: "Scan",
+    events: "Events",
+    profile: "Profile",
+    primary: "Primary",
+  },
+  wallet: {
+    connect: "Connect",
+    connecting: "Connecting…",
+    chooseTitle: "Connect a wallet",
+    chooseSubtitle: "Pick a Solana wallet to sign in.",
+    installed: "Installed",
+    detected: "Detected",
+    noWallets: "Open Connex in a Solana wallet or on an Android phone with a wallet installed.",
+    disconnect: "Disconnect",
+    close: "Close",
+    account: "Account menu",
+  },
+  home: {
+    headline: "Your smart badge for IRL connections",
+    subline: "Scan, connect, remember, and tip — all from your wallet.",
+    badgeTitle: "Your QR badge will appear here",
+    badgeHint: "Connected as",
+  },
+  connections: {
+    title: "Connections",
+    description: "The people you have met, all in one place.",
+    empty: "No connections yet",
+    emptyHint: "Scan someone's badge to add them.",
+  },
+  scan: {
+    title: "Scan",
+    description: "Point your camera at a Connex badge.",
+    empty: "Scanner coming soon",
+    emptyHint: "You will be able to connect with a single scan.",
+  },
+  events: {
+    title: "Events",
+    description: "Events you attend and the people you meet there.",
+    empty: "No events yet",
+    emptyHint: "Events will show up here.",
+  },
+  me: {
+    title: "Profile",
+    description: "Your public badge and settings.",
+    empty: "Profile not set up",
+    emptyHint: "Connect your wallet to create your badge.",
+  },
+  publicProfile: {
+    title: "Public profile",
+    description: "This is how others see this badge.",
+    empty: "Profile coming soon",
+    emptyHint: "Details will appear here.",
+  },
+  legal: {
+    terms: "Terms of Service",
+    privacy: "Privacy Policy",
+    placeholder: "This document is coming soon.",
+  },
+  notFound: {
+    title: "Page not found",
+    description: "The page you are looking for does not exist.",
+    back: "Back to home",
+  },
+} as const;

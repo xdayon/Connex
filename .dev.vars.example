@@ -1,0 +1,2 @@
+# Worker secrets go in .dev.vars (gitignored) for local dev,
+# and in production via `wrangler secret put NAME`.

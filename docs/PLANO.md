@@ -46,7 +46,7 @@ O ponto realmente diferente é o item 1 levado adiante: um **grafo de confiança
 
 ## 4. Stack recomendada
 
-Tudo em **uma conta Cloudflare gratuita**, sem Supabase:
+**Decisão (05/11):** Supabase para banco e login; Cloudflare (conta separada) para hospedar o app, rodar a IA e o cron que mantém o Supabase acordado.
 
 | Camada | Escolha | Motivo |
 |---|---|---|
@@ -54,10 +54,10 @@ Tudo em **uma conta Cloudflare gratuita**, sem Supabase:
 | Estilo | Tailwind CSS com tokens de design próprios | Rápido de iterar e consistente |
 | Hospedagem | Cloudflare Workers com Static Assets | Arquivos estáticos são grátis e ilimitados; só a API conta no limite diário |
 | API | Hono no Worker, validação com Zod | Leve, tipado, feito para Workers |
-| Banco | Cloudflare D1 (SQLite) com FTS5 para busca textual | Não "dorme" como o Supabase gratuito, que pausa após 7 dias sem uso |
-| IA | Workers AI (embeddings multilíngues e transcrição de voz) e Vectorize na fase 2 | No mesmo plano gratuito; chave nenhuma no navegador |
+| Banco | Supabase Postgres (região São Paulo) com pgvector, busca textual em português e RLS | Busca vetorial e textual na mesma consulta, consultas de grafo e sem cota diária de leitura. A pausa de 7 dias é evitada por um Cron da Cloudflare |
+| IA | Workers AI (embeddings multilíngues e transcrição de voz), com vetores salvos no pgvector | No plano gratuito; nenhuma chave no navegador |
 | Carteira | `@solana/wallet-adapter-react` + `@solana-mobile/wallet-standard-mobile` | Caminho oficial para MWA na web: Seed Vault, Phantom, Solflare |
-| Login | Sign In With Solana (SIWS) | Sem senha; a assinatura prova que a carteira é sua |
+| Login | Sign In With Solana pelo Supabase Auth (Web3 Wallet), com Turnstile | Sem senha nem e-mail; a assinatura prova que a carteira é sua. Plano B: verificação SIWS no Worker |
 | Android | `solana-mobile webshell` | Recomendação atual da Solana Mobile |
 
 ### Uma conta Cloudflare nova ou a sua atual?
