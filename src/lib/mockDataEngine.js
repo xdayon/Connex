@@ -155,6 +155,8 @@ export const getPersonalWeb = () => {
         specialty: 'Produto & Estratégia',
         score: 4.9,
         reviews: generateReviews('Você', 3),
+        notes: [],
+        meetingPhoto: null,
         lat: -23.55, lng: -46.63, location: 'São Paulo, BR',
         social: { twitter: 'https://twitter.com', linkedin: 'https://linkedin.com' } 
       }
@@ -189,6 +191,8 @@ export const getPersonalWeb = () => {
         specialty: pickRandom(specialties),
         score: avgScore || (Math.random() * 1.5 + 3.5).toFixed(1) * 1,
         reviews: nodeReviews,
+        notes: [],
+        meetingPhoto: null,
         ...weightedGeoLocation(),
         social: {
           linkedin: `https://linkedin.com/in/${nodeName.replace(' ', '').toLowerCase()}`,
@@ -246,6 +250,8 @@ export const generateContextData = (contextParam) => {
       score: 0,
       reviews: [],
       skills: [],
+      notes: [],
+      meetingPhoto: null,
       social: {}
     });
 
@@ -307,6 +313,26 @@ export const addReviewToNode = (nodeId, review) => {
       node.reviews.push(review);
       // Recalculate score
       node.score = Math.round((node.reviews.reduce((sum, r) => sum + r.rating, 0) / node.reviews.length) * 10) / 10;
+    }
+  }
+};
+
+export const addNoteToNode = (nodeId, note) => {
+  if (personalWebCache) {
+    const nodeIndex = personalWebCache.nodes.findIndex(n => n.id === nodeId);
+    if (nodeIndex !== -1) {
+      const node = personalWebCache.nodes[nodeIndex];
+      node.notes = node.notes || [];
+      node.notes.push(note);
+    }
+  }
+};
+
+export const updateMeetingPhoto = (nodeId, photoUrl) => {
+  if (personalWebCache) {
+    const nodeIndex = personalWebCache.nodes.findIndex(n => n.id === nodeId);
+    if (nodeIndex !== -1) {
+      personalWebCache.nodes[nodeIndex].meetingPhoto = photoUrl;
     }
   }
 };

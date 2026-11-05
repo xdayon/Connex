@@ -1,10 +1,27 @@
-import React, { useState } from 'react';
-import { X, MessageCircle, Twitter, Linkedin, Instagram, Globe, UserPlus, CheckCircle, Lock, Wallet, Star, Award } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, MessageCircle, Twitter, Linkedin, Instagram, Globe, UserPlus, CheckCircle, Lock, Wallet, Star, Award, Mic, Send, Camera, Image as ImageIcon, FileText, Info, Calendar } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
+import { addNoteToNode, updateMeetingPhoto } from '../lib/mockDataEngine';
 
 const ProfileSidebar = ({ node, onClose, onOpenChat, onOpenReview }) => {
   const { showToast } = useToast();
   const [connectionStatus, setConnectionStatus] = useState('none'); // none, pending, following
+  const [activeTab, setActiveTab] = useState('about'); // about, notes, meeting
+  const [localNotes, setLocalNotes] = useState([]);
+  const [localMeetingPhoto, setLocalMeetingPhoto] = useState(null);
+  const [newNoteText, setNewNoteText] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (node) {
+      setLocalNotes(node.notes || []);
+      setLocalMeetingPhoto(node.meetingPhoto || null);
+      setActiveTab('about');
+      setNewNoteText('');
+      setIsRecording(false);
+    }
+  }, [node?.id]);
 
   if (!node) return null;
 
@@ -46,6 +63,50 @@ const ProfileSidebar = ({ node, onClose, onOpenChat, onOpenReview }) => {
   const handleConnectClick = () => {
     setConnectionStatus('pending');
     showToast(`Solicitação de conexão enviada para ${node.name}. Agora você está seguindo as atualizações desta pessoa.`, 'info');
+  };
+
+  const handleAddTextNote = () => {
+    if (!newNoteText.trim()) return;
+    const note = {
+      type: 'text',
+      text: newNoteText.trim(),
+      date: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    };
+    addNoteToNode(node.id, note);
+    setLocalNotes([...localNotes, note]);
+    setNewNoteText('');
+    showToast('Nota salva para a IA.', 'success');
+  };
+
+  const handleAddAudioNote = () => {
+    if (isRecording) {
+      setIsRecording(false);
+      const note = {
+        type: 'audio',
+        text: 'Transcrição simulada: "Encontrei com ' + node.name + ' hoje. Pessoa fantástica, com ótimas ideias."',
+        date: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      };
+      addNoteToNode(node.id, note);
+      setLocalNotes([...localNotes, note]);
+      showToast('Áudio processado e mapeado pela IA.', 'success');
+    } else {
+      setIsRecording(true);
+      showToast('Gravando áudio... Clique novamente para enviar.', 'info');
+    }
+  };
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const url = event.target.result;
+        updateMeetingPhoto(node.id, url);
+        setLocalMeetingPhoto(url);
+        showToast('Foto do primeiro encontro salva com sucesso!', 'success');
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -150,8 +211,26 @@ const ProfileSidebar = ({ node, onClose, onOpenChat, onOpenReview }) => {
         </div>
       )}
 
-      {/* Bio */}
-      <div style={{ marginBottom: '2rem' }}>
+      {/* Tabs */}
+      {node.id !== 'Me' && node.isConnectedToMe && (
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
+          <button onClick={() => setActiveTab('about')} style={{ flex: 1, padding: '0.75rem 0', background: 'transparent', border: 'none', borderBottom: activeTab === 'about' ? '2px solid #6366f1' : '2px solid transparent', color: activeTab === 'about' ? '#6366f1' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.85rem', transition: 'all 0.2s' }}>
+            <Info size={16} /> Sobre
+          </button>
+          <button onClick={() => setActiveTab('notes')} style={{ flex: 1, padding: '0.75rem 0', background: 'transparent', border: 'none', borderBottom: activeTab === 'notes' ? '2px solid #6366f1' : '2px solid transparent', color: activeTab === 'notes' ? '#6366f1' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.85rem', transition: 'all 0.2s' }}>
+            <FileText size={16} /> Notas IA
+          </button>
+          <button onClick={() => setActiveTab('meeting')} style={{ flex: 1, padding: '0.75rem 0', background: 'transparent', border: 'none', borderBottom: activeTab === 'meeting' ? '2px solid #6366f1' : '2px solid transparent', color: activeTab === 'meeting' ? '#6366f1' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.85rem', transition: 'all 0.2s' }}>
+            <Calendar size={16} /> 1º Encontro
+          </button>
+        </div>
+      )}
+
+      {/* Tab Content: ABOUT */}
+      {(activeTab === 'about' || !node.isConnectedToMe || node.id === 'Me') && (
+        <>
+          {/* Bio */}
+          <div style={{ marginBottom: '2rem' }}>
         <h4 style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Sobre</h4>
         <p style={{ fontSize: '0.95rem', lineHeight: '1.5', color: node.isConnectedToMe ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
           {node.isConnectedToMe || node.id === 'Me' 
@@ -211,6 +290,96 @@ const ProfileSidebar = ({ node, onClose, onOpenChat, onOpenReview }) => {
           )}
         </div>
       </div>
+      </>
+      )}
+
+      {/* Tab Content: NOTES */}
+      {activeTab === 'notes' && node.isConnectedToMe && node.id !== 'Me' && (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem', flex: 1, overflow: 'hidden' }}>
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingRight: '0.5rem' }}>
+            {localNotes.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '1rem' }}>
+                Nenhuma nota ainda. Adicione informações sobre {node.name} para a IA mapear suas sinergias e histórico.
+              </p>
+            ) : (
+              localNotes.map((note, idx) => (
+                <div key={idx} style={{ background: 'rgba(255,255,255,0.03)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.7rem' }}>
+                    <span>{note.date}</span>
+                    <span style={{ color: note.type === 'audio' ? '#10b981' : 'var(--text-secondary)' }}>
+                      {note.type === 'audio' ? <Mic size={12} /> : <FileText size={12} />}
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, color: 'var(--text-primary)', lineHeight: '1.4' }}>{note.text}</p>
+                </div>
+              ))
+            )}
+          </div>
+          
+          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+            <textarea 
+              placeholder="Adicionar nota para a IA..."
+              value={newNoteText}
+              onChange={(e) => setNewNoteText(e.target.value)}
+              style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: '0.85rem', resize: 'none', height: '60px', outline: 'none' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+              <button 
+                onClick={handleAddAudioNote}
+                style={{ background: isRecording ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.05)', color: isRecording ? '#ef4444' : 'var(--text-secondary)', border: 'none', padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', transition: 'all 0.2s' }}
+              >
+                {isRecording ? <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', animation: 'pulse 1s infinite' }} /> : <Mic size={14} />}
+                {isRecording ? 'Gravando...' : 'Áudio'}
+              </button>
+              <button 
+                onClick={handleAddTextNote}
+                disabled={!newNoteText.trim()}
+                className="btn-primary"
+                style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', opacity: newNoteText.trim() ? 1 : 0.5 }}
+              >
+                <Send size={14} /> Enviar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab Content: MEETING PHOTO */}
+      {activeTab === 'meeting' && node.isConnectedToMe && node.id !== 'Me' && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', textAlign: 'center', flex: 1, overflowY: 'auto' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.5', padding: '0 1rem' }}>
+            Salve uma selfie do primeiro encontro com <strong>{node.name}</strong> para lembrar eternamente deste momento.
+          </div>
+          
+          {localMeetingPhoto ? (
+            <div style={{ position: 'relative', width: '100%', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-color)', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+              <img src={localMeetingPhoto} alt="Primeiro Encontro" style={{ width: '100%', display: 'block', objectFit: 'cover', aspectRatio: '4/5' }} />
+              <button 
+                onClick={() => { setLocalMeetingPhoto(null); updateMeetingPhoto(node.id, null); }}
+                style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <div style={{ width: '100%', aspectRatio: '4/5', background: 'rgba(255,255,255,0.02)', border: '2px dashed var(--border-color)', borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', cursor: 'pointer', transition: 'all 0.2s' }} onClick={() => fileInputRef.current?.click()}>
+              <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Camera size={28} />
+              </div>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Adicionar Selfie</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', opacity: 0.7 }}>Upload de Imagem</span>
+            </div>
+          )}
+          
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            style={{ display: 'none' }} 
+            accept="image/*"
+            onChange={handlePhotoUpload}
+          />
+        </div>
+      )}
 
     </div>
   );
