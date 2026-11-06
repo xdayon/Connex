@@ -149,9 +149,9 @@ do $$ begin
   if (select count(*) from public.events) <> 1 then
     raise exception 'FAIL: D entrou no evento mas não o vê';
   end if;
-  -- D agora está no mesmo evento que A (visível), então enxerga A.
-  if (select count(*) from public.profiles where id = '00000000-0000-0000-0000-00000000000a') <> 1 then
-    raise exception 'FAIL: D não vê A, participante do mesmo evento';
+  -- Estar no mesmo evento não libera o perfil: só conexão (ou o próprio) libera.
+  if exists (select 1 from public.profiles where id = '00000000-0000-0000-0000-00000000000a') then
+    raise exception 'FAIL: D vê o perfil de A só por estar no mesmo evento';
   end if;
   -- connect sem token só com perfil público: A é público
   perform public.connect('alice', null, (select id from ev));
@@ -162,6 +162,114 @@ do $$ begin
     raise exception 'FAIL: conexão de crachá impresso marcada como verificada';
   end if;
 end $$;
+
+-- ---------------------------------------------------------------- v2: eventos listados, event_people, check_in, links
+-- O service role marca eventos como listados (aqui, como superusuário). B e A ficam privados/públicos
+-- conforme o cenário e voltam ao estado original no fim da seção.
+reset role;
+insert into public.events (name, created_by, listed)
+  values ('Listed Live Event', '00000000-0000-0000-0000-00000000000b', true),
+         ('Unlisted Event', '00000000-0000-0000-0000-00000000000b', false);
+create temp table v2ids as
+  select (select id from public.events where name = 'Listed Live Event') as listed_id,
+         (select id from public.events where name = 'Unlisted Event') as unlisted_id;
+grant select on v2ids to authenticated;
+update public.profiles set is_public = true, skills = '{Rust}' where id = '00000000-0000-0000-0000-00000000000b';
+update public.profiles set is_public = false where id = '00000000-0000-0000-0000-00000000000a';
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000d', false);
+-- D só conhecia A por ter conectado pelo crachá; remove a conexão para testar só a presença no evento.
+delete from public.connections where owner_id = auth.uid();
+update public.profiles set handle = 'dave' where id = auth.uid();
+do $$ begin
+  if (select count(*) from public.events where name = 'Listed Live Event') <> 1 then
+    raise exception 'FAIL: evento listado invisível para autenticado';
+  end if;
+  if exists (select 1 from public.events where name = 'Unlisted Event') then
+    raise exception 'FAIL: evento não listado visível para estranho';
+  end if;
+
+  begin
+    update public.events set listed = true where name = 'IslandDAO Floripa';
+    raise exception 'FAIL: usuário alterou events.listed';
+  exception when insufficient_privilege then null; end;
+
+  begin
+    perform public.check_in((select unlisted_id from v2ids));
+    raise exception 'FAIL: check_in em evento não listado';
+  exception when no_data_found then null; end;
+
+  begin
+    perform * from public.event_people((select listed_id from v2ids));
+    raise exception 'FAIL: event_people aceitou não participante';
+  exception when no_data_found then null; end;
+
+  perform public.check_in((select listed_id from v2ids));
+  perform public.check_in((select listed_id from v2ids)); -- idempotente
+  if (select count(*) from public.event_attendees where event_id = (select listed_id from v2ids) and user_id = auth.uid()) <> 1 then
+    raise exception 'FAIL: check_in não registrou presença única';
+  end if;
+end $$;
+
+-- Links: discord aceita nome de usuário puro; nos outros, só https; javascript: segue barrado.
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
+update public.profiles set links = '{"github":"https://github.com/alice","discord":"alice_dc","calendar":"https://cal.com/alice"}'
+  where id = auth.uid();
+do $$ begin
+  begin
+    update public.profiles set links = '{"discord":"javascript:alert(1)"}' where id = auth.uid();
+    raise exception 'FAIL: discord com javascript: aceito';
+  exception when check_violation then null; end;
+  begin
+    update public.profiles set links = '{"github":"alice"}' where id = auth.uid();
+    raise exception 'FAIL: nome puro aceito fora do discord';
+  exception when check_violation then null; end;
+  perform public.check_in((select listed_id from v2ids));
+end $$;
+
+-- B (público) também faz check-in.
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000b', false);
+select public.check_in((select listed_id from v2ids));
+
+-- D vê A e B em event_people, mas não lê as linhas de profiles antes de conectar.
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000d', false);
+do $$ begin
+  if not exists (select 1 from public.event_people((select listed_id from v2ids)) where handle = 'alice' and not is_me and not in_network) then
+    raise exception 'FAIL: event_people não lista A';
+  end if;
+  if not exists (select 1 from public.event_people((select listed_id from v2ids)) where is_me and handle = 'dave') then
+    raise exception 'FAIL: event_people não devolveu a própria linha';
+  end if;
+  if exists (
+    select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'event_people'
+      and p.proargnames && array['wallet', 'links', 'bio', 'location']
+  ) then
+    raise exception 'FAIL: event_people expõe coluna sensível';
+  end if;
+  if exists (select 1 from public.profiles where id in ('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b')) then
+    raise exception 'FAIL: co-participante lê profiles sem conexão';
+  end if;
+
+  begin
+    perform public.connect('alice', null, (select listed_id from v2ids));
+    raise exception 'FAIL: D conectou com perfil privado sem QR';
+  exception when no_data_found then null; end;
+
+  perform public.connect('bob', null, (select listed_id from v2ids));
+  if (select count(*) from public.profiles where id = '00000000-0000-0000-0000-00000000000b') <> 1 then
+    raise exception 'FAIL: D não vê B depois de desbloquear';
+  end if;
+  if not exists (select 1 from public.event_people((select listed_id from v2ids)) where handle = 'bob' and in_network) then
+    raise exception 'FAIL: in_network não marcado após conectar';
+  end if;
+end $$;
+
+-- Restaura o estado esperado pelas seções seguintes (A público, B privado).
+reset role;
+update public.profiles set is_public = true where id = '00000000-0000-0000-0000-00000000000a';
+update public.profiles set is_public = false where id = '00000000-0000-0000-0000-00000000000b';
 
 -- ---------------------------------------------------------------- C (sem carteira) não faz nada
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000c', false);
