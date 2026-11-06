@@ -1,4 +1,4 @@
-export const LINK_KEYS = ["telegram", "x", "github", "linkedin", "instagram", "farcaster", "youtube", "tiktok", "website"] as const;
+export const LINK_KEYS = ["telegram", "x", "website", "github", "farcaster", "linkedin", "discord", "superteam", "calendar", "instagram", "youtube", "tiktok"] as const;
 export type LinkKey = (typeof LINK_KEYS)[number];
 export type Links = Partial<Record<LinkKey, string>>;
 
@@ -32,7 +32,26 @@ export type EventRow = {
   ends_at: string | null;
   join_code: string;
   created_by: string;
+  listed: boolean;
   created_at: string;
+};
+
+export type EventPerson = {
+  user_id: string;
+  handle: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  headline: string | null;
+  company: string | null;
+  skills: string[];
+  looking_for: string[];
+  offering: string[];
+  is_public: boolean;
+  seeker_verified: boolean;
+  is_me: boolean;
+  in_network: boolean;
+  verified: boolean;
+  joined_at: string;
 };
 
 export type Connection = {

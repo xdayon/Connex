@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { Calendar, ChevronRight, KeyRound, MapPin, Plus } from "lucide-react";
-import { Button } from "../components/ui/Button";
+import { Button, buttonClass } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Sheet } from "../components/ui/Sheet";
 import { Skeleton } from "../components/ui/Skeleton";
@@ -11,15 +12,33 @@ import { strings } from "../i18n/strings";
 import { setCurrentEventId, useCurrentEventId } from "../lib/currentEvent";
 import { friendlyError } from "../lib/errors";
 import { formatDateTime } from "../lib/format";
+import { checkInToEvent } from "../lib/liveEvents";
 import { supabase } from "../lib/supabase";
 import type { EventRow } from "../lib/types";
 import { useAsync } from "../lib/useAsync";
+import { useAuth } from "../providers/AuthProvider";
 
 const t = strings.events;
+
+function EventMeta({ ev, code = false }: { ev: EventRow; code?: boolean }) {
+  return (
+    <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-sm text-muted">
+      {ev.starts_at && <span>{formatDateTime(ev.starts_at)}</span>}
+      {ev.location && (
+        <span className="inline-flex items-center gap-1">
+          <MapPin size={12} aria-hidden />
+          {ev.location}
+        </span>
+      )}
+      {code && <span className="font-mono text-xs">{ev.join_code}</span>}
+    </p>
+  );
+}
 
 export function EventsPage() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { user } = useAuth();
   const currentId = useCurrentEventId();
   const [sheet, setSheet] = useState<"create" | "join" | null>(null);
   const [busy, setBusy] = useState(false);
@@ -30,12 +49,36 @@ export function EventsPage() {
   const [ends, setEnds] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [checkingIn, setCheckingIn] = useState<string | null>(null);
 
   const { data, loading, error: loadError, reload } = useAsync(async () => {
-    const { data: rows, error: err } = await supabase.from("events").select("*").order("created_at", { ascending: false });
-    if (err) throw err;
-    return rows as EventRow[];
-  }, []);
+    const [evs, mine] = await Promise.all([
+      supabase.from("events").select("*").order("created_at", { ascending: false }),
+      supabase.from("event_attendees").select("event_id").eq("user_id", user?.id ?? ""),
+    ]);
+    if (evs.error) throw evs.error;
+    if (mine.error) throw mine.error;
+    const joined = new Set((mine.data ?? []).map((r) => r.event_id as string));
+    const now = Date.now();
+    const rows = evs.data as EventRow[];
+    const isLive = (ev: EventRow) => ev.listed && (!ev.ends_at || new Date(ev.ends_at).getTime() > now);
+    return {
+      live: rows.filter(isLive).map((ev) => ({ ev, joined: joined.has(ev.id) })),
+      mine: rows.filter((ev) => joined.has(ev.id) || ev.created_by === user?.id),
+    };
+  }, [user?.id]);
+
+  const checkIn = async (id: string) => {
+    setCheckingIn(id);
+    try {
+      await checkInToEvent(id);
+      toast(t.joined, "success");
+      navigate(`/events/${id}`);
+    } catch (e) {
+      setCheckingIn(null);
+      toast(friendlyError(e), "error");
+    }
+  };
 
   const close = () => {
     if (busy) return;
@@ -102,43 +145,69 @@ export function EventsPage() {
         </div>
       ) : loadError ? (
         <EmptyState icon={Calendar} title={t.errorTitle} hint={friendlyError(loadError)} action={<Button onClick={reload}>{strings.common.retry}</Button>} />
-      ) : !data || data.length === 0 ? (
-        <EmptyState icon={Calendar} title={t.empty} hint={t.emptyHint} />
       ) : (
-        <ul className="flex flex-col gap-3">
-          {data.map((ev) => (
-            <li key={ev.id}>
-              <Link
-                to={`/events/${ev.id}`}
-                className="flex min-h-20 items-center gap-3 rounded-card border border-line bg-surface p-4 transition active:scale-[0.99]"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-2">
-                    <span className="truncate font-display font-semibold">{ev.name}</span>
-                    {ev.id === currentId && (
-                      <span className="shrink-0 rounded-full bg-volt/15 px-2 py-0.5 text-xs font-semibold text-volt">{t.current}</span>
-                    )}
-                  </p>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-sm text-muted">
-                    {ev.starts_at && <span>{formatDateTime(ev.starts_at)}</span>}
-                    {ev.location && (
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin size={12} aria-hidden />
-                        {ev.location}
-                      </span>
-                    )}
-                    <span className="font-mono text-xs">{ev.join_code}</span>
-                  </p>
-                </div>
-                <ChevronRight size={18} className="shrink-0 text-muted" aria-hidden />
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <>
+          {data && data.live.length > 0 && (
+            <div>
+              <h2 className="mb-3 font-display text-lg font-semibold">{t.liveNow}</h2>
+              <ul className="flex flex-col gap-3">
+                {data.live.map(({ ev, joined }) => (
+                  <li key={ev.id}>
+                    <Card className="flex items-center gap-3 p-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-display font-semibold">{ev.name}</p>
+                        <EventMeta ev={ev} />
+                      </div>
+                      {joined ? (
+                        <Link to={`/events/${ev.id}`} className={buttonClass({ variant: "secondary", size: "sm" })}>
+                          {t.open}
+                        </Link>
+                      ) : (
+                        <Button size="sm" loading={checkingIn === ev.id} disabled={checkingIn !== null} onClick={() => void checkIn(ev.id)}>
+                          {t.checkIn}
+                        </Button>
+                      )}
+                    </Card>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div>
+            <h2 className="mb-3 font-display text-lg font-semibold">{t.yourEvents}</h2>
+            {!data || data.mine.length === 0 ? (
+              <EmptyState icon={Calendar} title={t.empty} hint={t.emptyHint} />
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {data.mine.map((ev) => (
+                  <li key={ev.id}>
+                    <Link
+                      to={`/events/${ev.id}`}
+                      className="flex min-h-20 items-center gap-3 rounded-card border border-line bg-surface p-4 transition active:scale-[0.99]"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="flex items-center gap-2">
+                          <span className="truncate font-display font-semibold">{ev.name}</span>
+                          {ev.id === currentId && (
+                            <span className="shrink-0 rounded-full bg-volt/15 px-2 py-0.5 text-xs font-semibold text-volt">{t.current}</span>
+                          )}
+                        </p>
+                        <EventMeta ev={ev} code />
+                      </div>
+                      <ChevronRight size={18} className="shrink-0 text-muted" aria-hidden />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </>
       )}
 
       <Sheet open={sheet === "create"} onClose={close} title={t.create}>
         <form onSubmit={create} className="flex flex-col gap-4" noValidate>
+          <p className="-mt-2 text-sm text-muted">{t.organizerHint}</p>
           <TextField label={t.name} value={name} maxLength={80} placeholder={t.namePlaceholder} onChange={(e) => setName(e.target.value)} />
           <TextField label={t.location} value={location} maxLength={120} placeholder={t.locationPlaceholder} onChange={(e) => setLocation(e.target.value)} />
           <TextArea label={t.description} value={description} maxLength={500} onChange={(e) => setDescription(e.target.value)} />

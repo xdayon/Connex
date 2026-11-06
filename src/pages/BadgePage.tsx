@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Copy, Share2, WifiOff } from "lucide-react";
+import { ChevronRight, Copy, Share2, WifiOff } from "lucide-react";
+import { Link } from "react-router";
 import { ConnectedSheet } from "../components/ConnectedSheet";
 import { QRCode } from "../components/QRCode";
 import { Avatar } from "../components/ui/Avatar";
 import { Button } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
 import { useToast } from "../components/ui/Toast";
 import { strings } from "../i18n/strings";
 import { copyText } from "../lib/clipboard";
@@ -157,6 +159,9 @@ export function BadgePage() {
   const url = live && token ? `${base}?t=${token}` : base;
   const secondsLeft = Math.max(0, Math.ceil((nextAt.current - now) / 1000));
   const name = profileName(profile);
+  const hasLinks = Object.keys(profile.links ?? {}).length > 0;
+  const hasSkills = profile.skills.length > 0;
+  const doneCount = 1 + Number(hasLinks) + Number(hasSkills);
   const sub = [profile.headline, profile.company].filter(Boolean).join(" · ");
 
   const share = async () => {
@@ -225,6 +230,24 @@ export function BadgePage() {
           {strings.badge.copyLink}
         </Button>
       </div>
+
+      {(!hasLinks || !hasSkills) && (
+        <Link to={`/welcome?step=${hasLinks ? 3 : 2}`} className="block w-full">
+          <Card className="flex items-center gap-3 p-4 transition active:scale-[0.99]">
+            <div className="min-w-0 flex-1">
+              <p className="flex items-baseline justify-between gap-3">
+                <span className="font-display font-semibold">{strings.badge.completeTitle}</span>
+                <span className="font-mono text-xs text-muted">{strings.badge.completeProgress(doneCount, 3)}</span>
+              </p>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-line">
+                <div className="h-full rounded-full bg-volt" style={{ width: `${(doneCount / 3) * 100}%` }} />
+              </div>
+              <p className="mt-2 text-sm text-muted">{hasLinks ? strings.badge.completeSkills : strings.badge.completeLinks}</p>
+            </div>
+            <ChevronRight size={18} className="shrink-0 text-muted" aria-hidden />
+          </Card>
+        </Link>
+      )}
 
       <ConnectedSheet
         connection={connected}
