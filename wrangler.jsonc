@@ -1,7 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "connex",
+  // Conta "Dayon X" (dayon.bochnia@gmail.com). Fixada para nunca publicar em outra conta.
+  "account_id": "cfe2803674887253a02ca192c708f82a",
   "main": "worker/index.ts",
+  "workers_dev": true,
+  "preview_urls": false,
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },

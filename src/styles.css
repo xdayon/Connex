@@ -36,3 +36,124 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
+
+:focus-visible {
+  outline: 2px solid var(--color-volt);
+  outline-offset: 2px;
+}
+
+input,
+textarea,
+button,
+select {
+  font: inherit;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes qr-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-volt) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 22px color-mix(in srgb, var(--color-volt) 0%, transparent);
+  }
+}
+
+@keyframes meet-left {
+  from {
+    transform: translateX(-64px) scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(10px) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes meet-right {
+  from {
+    transform: translateX(64px) scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-10px) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.anim-sheet {
+  animation: sheet-up 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.anim-fade {
+  animation: fade-in 180ms ease-out;
+}
+.anim-toast {
+  animation: toast-in 200ms ease-out;
+}
+.anim-qr-pulse {
+  animation: qr-pulse 700ms ease-out;
+}
+.anim-meet-left {
+  animation: meet-left 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.anim-meet-right {
+  animation: meet-right 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.anim-pop {
+  animation: pop 420ms 450ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
