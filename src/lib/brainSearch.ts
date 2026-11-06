@@ -27,7 +27,6 @@ const SYNONYM_GROUPS: string[][] = [
   ["ts", "typescript"],
   ["py", "python"],
   ["web3", "crypto", "blockchain"],
-  ["solana", "sol"],
 ];
 
 const SYNONYMS = new Map<string, string[]>();
