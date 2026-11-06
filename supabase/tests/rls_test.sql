@@ -13,8 +13,8 @@ insert into auth.users (id, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000d', '{"sub":"web3:solana:So11111111111111111111111111111111111111112"}');
 
 do $$ begin
-  if (select count(*) from public.profiles) <> 3 then
-    raise exception 'FAIL: esperado 3 perfis criados pelo trigger, obtido %', (select count(*) from public.profiles);
+  if (select count(*) from public.profiles where id::text like '00000000-0000-0000-0000-00000000000%') <> 3 then
+    raise exception 'FAIL: esperado 3 perfis de teste criados pelo trigger';
   end if;
   if exists (select 1 from public.profiles where id = '00000000-0000-0000-0000-00000000000c') then
     raise exception 'FAIL: conta sem carteira ganhou perfil';
