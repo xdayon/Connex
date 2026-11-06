@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { Link, NavLink, Outlet } from "react-router";
-import { Calendar, QrCode, ScanLine, User, Users, type LucideIcon } from "lucide-react";
+import { Brain, Calendar, QrCode, ScanLine, User, type LucideIcon } from "lucide-react";
 import { strings } from "../i18n/strings";
 import { useCurrentEventId } from "../lib/currentEvent";
 import { supabase } from "../lib/supabase";
@@ -10,7 +10,7 @@ import { Skeleton } from "./ui/Skeleton";
 
 const tabs: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
   { to: "/", label: strings.nav.home, icon: QrCode, end: true },
-  { to: "/connections", label: strings.nav.connections, icon: Users },
+  { to: "/connections", label: strings.nav.connections, icon: Brain },
   { to: "/scan", label: strings.nav.scan, icon: ScanLine },
   { to: "/events", label: strings.nav.events, icon: Calendar },
   { to: "/me", label: strings.nav.profile, icon: User },

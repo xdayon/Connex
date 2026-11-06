@@ -15,10 +15,14 @@ import { VerifiedBadge } from "../components/ui/VerifiedBadge";
 import { strings } from "../i18n/strings";
 import { copyText } from "../lib/clipboard";
 import { friendlyError } from "../lib/errors";
-import { formatDate, shortAddress } from "../lib/format";
+import { shortAddress } from "../lib/format";
 import { supabase } from "../lib/supabase";
 import { CONNECTION_SELECT, type ConnectionWithContact } from "../lib/types";
 import { useAsync } from "../lib/useAsync";
+
+function formatWhen(iso: string): string {
+  return new Date(iso).toLocaleString("en", { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
 
 export function ConnectionDetailPage() {
   const { id = "" } = useParams();
@@ -143,20 +147,19 @@ export function ConnectionDetailPage() {
         {strings.common.back}
       </button>
 
+      <Card className="flex flex-col gap-1 border-volt/30 p-4">
+        <p className="font-display text-lg font-bold">{data.event ? `${t.metAt} ${data.event.name}` : strings.brain.met}</p>
+        <p className="text-sm text-muted">{formatWhen(data.met_at)}</p>
+        <p className={`mt-1 inline-flex items-center gap-1.5 text-xs font-semibold ${data.verified ? "text-volt" : "text-muted"}`}>
+          {data.verified ? <VerifiedBadge /> : null}
+          {data.verified ? t.contextLive : t.contextBadge}
+        </p>
+      </Card>
+
       {contact ? (
         <>
           <Card className="p-5">
             <ProfileHeader profile={contact} />
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm">
-              {data.verified ? <VerifiedBadge label /> : null}
-              <span className="text-muted">
-                {data.verified && data.event
-                  ? `${t.metAt} ${data.event.name} · ${formatDate(data.met_at)}`
-                  : data.verified
-                    ? `${t.metOn} ${formatDate(data.met_at)}`
-                    : `${t.savedFromBadge} · ${formatDate(data.met_at)}`}
-              </span>
-            </div>
           </Card>
           <LinkButtons profile={contact} />
           <ProfileExtras profile={contact} labels={{ skills: t.skills, lookingFor: t.lookingFor, offering: t.offering }} />
