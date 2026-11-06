@@ -9,7 +9,7 @@ const dims: Record<AvatarSize, string> = {
   xl: "size-24 text-3xl",
 };
 
-function initials(name: string): string {
+export function initials(name: string): string {
   const parts = name.trim().replace(/^@/, "").split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
   const first = Array.from(parts[0])[0] ?? "?";

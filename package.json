@@ -12,6 +12,7 @@
     "@solana/wallet-adapter-react": "0.15.40",
     "@solana/web3.js": "1.99.0",
     "@supabase/supabase-js": "2.119.0",
+    "d3-force": "3.0.0",
     "hono": "4.13.16",
     "lucide-react": "1.69.0",
     "qr-scanner": "1.4.2",
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.67.0",
     "@tailwindcss/vite": "4.3.4",
+    "@types/d3-force": "3.0.10",
     "@types/node": "26.6.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
