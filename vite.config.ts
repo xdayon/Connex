@@ -12,6 +12,8 @@ export default defineConfig({
     cloudflare(),
     VitePWA({
       registerType: "autoUpdate",
+      // Registered in src/main.tsx so updates apply right away (see registerSW there).
+      injectRegister: false,
       includeAssets: ["favicon.ico", "apple-touch-icon-180x180.png", "logo.svg"],
       manifest: {
         name: "Connex",
@@ -31,6 +33,10 @@ export default defineConfig({
       },
       workbox: {
         navigateFallbackDenylist: [/^\/api\//],
+        // A new version must take over without waiting for every tab to close:
+        // the Android WebView shell is rarely closed, so a waiting worker would never activate.
+        skipWaiting: true,
+        clientsClaim: true,
       },
     }),
   ],

@@ -1,8 +1,16 @@
 import { WalletReadyState, type WalletName } from "@solana/wallet-adapter-base";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { FlaskConical, Loader2 } from "lucide-react";
+import { ExternalLink, FlaskConical, Loader2 } from "lucide-react";
 import { strings } from "../i18n/strings";
 import { Sheet } from "./ui/Sheet";
+
+function walletBrowseLink(wallet: "phantom" | "solflare"): string {
+  const url = encodeURIComponent(window.location.href);
+  const ref = encodeURIComponent(window.location.origin);
+  return wallet === "phantom"
+    ? `https://phantom.app/ul/browse/${url}?ref=${ref}`
+    : `https://solflare.com/ul/v1/browse/${url}?ref=${ref}`;
+}
 
 type Props = {
   open: boolean;
@@ -35,7 +43,18 @@ export function SignInSheet({ open, busy, error, onClose, onChoose, onChooseDev 
         </p>
       )}
       {usable.length === 0 && !import.meta.env.DEV ? (
-        <p className="rounded-2xl border border-line bg-surface-2 p-4 text-sm text-muted">{strings.wallet.noWallets}</p>
+        <div className="flex flex-col gap-2">
+          <p className="rounded-2xl border border-line bg-surface-2 p-4 text-sm text-muted">{strings.wallet.noWallets}</p>
+          {/* iOS and desktop browsers without an extension: open this page in the wallet's in-app browser. */}
+          <a className={rowClass} href={walletBrowseLink("phantom")}>
+            <span className="flex-1 font-medium">{strings.wallet.openInPhantom}</span>
+            <ExternalLink size={16} className="text-muted" aria-hidden />
+          </a>
+          <a className={rowClass} href={walletBrowseLink("solflare")}>
+            <span className="flex-1 font-medium">{strings.wallet.openInSolflare}</span>
+            <ExternalLink size={16} className="text-muted" aria-hidden />
+          </a>
+        </div>
       ) : (
         <ul className="flex flex-col gap-2">
           {usable.map((w) => (
