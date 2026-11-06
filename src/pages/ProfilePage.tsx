@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Copy, ExternalLink, LogOut } from "lucide-react";
 import { AvatarUpload } from "../components/AvatarUpload";
 import { ChipEditor } from "../components/ChipEditor";
+import { LinkFields } from "../components/LinkFields";
 import { Button, buttonClass } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Sheet } from "../components/ui/Sheet";
@@ -127,20 +128,7 @@ export function ProfilePage() {
           <h2 className="font-display text-lg font-semibold">{t.links}</h2>
           <p className="text-sm text-muted">{t.linksHint}</p>
         </div>
-        {LINK_KEYS.map((k) => (
-          <TextField
-            key={k}
-            label={t.linkLabels[k]}
-            value={links[k]}
-            maxLength={300}
-            placeholder={t.linkPlaceholders[k]}
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            error={errors[k]}
-            onChange={(e) => setLinks((l) => ({ ...l, [k]: e.target.value }))}
-          />
-        ))}
+        <LinkFields values={links} errors={errors} onChange={(k, v) => setLinks((l) => ({ ...l, [k]: v }))} />
       </Card>
 
       <Card className="flex flex-col gap-5 p-5">

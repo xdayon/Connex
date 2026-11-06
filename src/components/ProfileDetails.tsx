@@ -1,8 +1,10 @@
-import { Building2, ExternalLink, MapPin } from "lucide-react";
+import { Building2, Copy, ExternalLink, MapPin } from "lucide-react";
 import { Chip } from "./ui/Chip";
 import { Avatar } from "./ui/Avatar";
+import { useToast } from "./ui/Toast";
 import { strings } from "../i18n/strings";
-import { linkEntries, safeHttps } from "../lib/links";
+import { copyText } from "../lib/clipboard";
+import { isUrl, linkEntries, safeHttps } from "../lib/links";
 import { profileName, type Profile } from "../lib/types";
 
 export function ProfileHeader({ profile }: { profile: Profile }) {
@@ -37,7 +39,7 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
   );
 }
 
-function ChipGroup({ title, items }: { title: string; items: string[] }) {
+export function ChipGroup({ title, items }: { title: string; items: string[] }) {
   if (items.length === 0) return null;
   return (
     <div>
@@ -62,22 +64,29 @@ export function ProfileExtras({ profile, labels }: { profile: Profile; labels?: 
   );
 }
 
+const linkCls =
+  "inline-flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface-2 px-4 text-sm font-medium transition hover:border-muted/60";
+
 export function LinkButtons({ profile }: { profile: Profile }) {
-  const entries = linkEntries(profile.links).filter(([, url]) => safeHttps(url));
+  const toast = useToast();
+  const entries = linkEntries(profile.links).filter(([key, v]) => (isUrl(v) ? safeHttps(v) : key === "discord"));
   if (entries.length === 0) return null;
+  const copyDiscord = async (name: string) => toast((await copyText(name)) ? strings.common.copied : strings.errors.generic, "success");
   return (
     <ul className="flex flex-wrap gap-2">
-      {entries.map(([key, url]) => (
+      {entries.map(([key, value]) => (
         <li key={key}>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface-2 px-4 text-sm font-medium transition hover:border-muted/60"
-          >
-            {strings.me.linkLabels[key]}
-            <ExternalLink size={14} className="text-muted" aria-hidden />
-          </a>
+          {isUrl(value) ? (
+            <a href={value} target="_blank" rel="noopener noreferrer" className={linkCls}>
+              {strings.me.linkLabels[key]}
+              <ExternalLink size={14} className="text-muted" aria-hidden />
+            </a>
+          ) : (
+            <button type="button" onClick={() => void copyDiscord(value)} className={linkCls}>
+              {strings.me.linkLabels[key]} · {value}
+              <Copy size={14} className="text-muted" aria-hidden />
+            </button>
+          )}
         </li>
       ))}
     </ul>
