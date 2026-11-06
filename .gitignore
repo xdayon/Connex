@@ -18,4 +18,3 @@ dist-ssr
 .wrangler/
 *.keystore
 *.jks
-android/

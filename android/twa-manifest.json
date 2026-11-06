@@ -1,0 +1,13 @@
+{
+  "fallbackType": "webview",
+  "generatorApp": "solana-mobile",
+  "host": "connex.dayon-x.workers.dev",
+  "launcherName": "Connex",
+  "name": "Connex",
+  "packageId": "com.hitechx.connex",
+  "startUrl": "/",
+  "signingKey": {
+    "alias": "connex",
+    "path": "/home/dx/.config/connex-release/connex-release.keystore"
+  }
+}

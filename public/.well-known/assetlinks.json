@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.hitechx.connex",
+      "sha256_cert_fingerprints": [
+        "90:B7:1E:60:B9:CA:68:7A:D7:7F:37:A4:EE:89:19:2D:46:1F:C5:F1:27:4F:4C:77:3D:04:EE:21:F2:7D:A3:4B"
+      ]
+    }
+  }
+]

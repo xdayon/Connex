@@ -322,7 +322,7 @@ export const strings = {
     terms: "Terms of Service",
     privacy: "Privacy Policy",
     updated: "Last updated: November 6, 2026",
-    contactEmail: "TODO-contact@connex",
+    contactEmail: "hitechx.world@gmail.com",
     backHome: "Back to Connex",
     intro: {
       terms: "These terms govern your use of Connex, a networking app for meeting people in person. By signing in you agree to them.",
