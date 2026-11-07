@@ -1,7 +1,7 @@
 {
   "fallbackType": "webview",
   "generatorApp": "solana-mobile",
-  "host": "connex.dayon-x.workers.dev",
+  "host": "connex.contact",
   "launcherName": "Connex",
   "name": "Connex",
   "packageId": "com.hitechx.connex",

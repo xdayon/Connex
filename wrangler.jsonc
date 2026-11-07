@@ -5,6 +5,8 @@
   "account_id": "cfe2803674887253a02ca192c708f82a",
   "main": "worker/index.ts",
   "workers_dev": true,
+  // Domínio próprio (zona connex.contact na mesma conta). workers.dev segue no ar para APKs e QRs antigos.
+  "routes": [{ "pattern": "connex.contact", "custom_domain": true }],
   "preview_urls": false,
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],

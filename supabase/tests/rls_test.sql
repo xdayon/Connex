@@ -284,6 +284,92 @@ do $$ begin
   exception when invalid_authorization_specification then null; end;
 end $$;
 
+-- ---------------------------------------------------------------- v3: compartilhamento seletivo
+-- E mostra o QR liberando WhatsApp e GitHub (esconde o LinkedIn); F escaneia liberando só o Telegram.
+reset role;
+insert into auth.users (id, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-0000000000e1', '{"sub":"web3:solana:Stake11111111111111111111111111111111111111"}'),
+  ('00000000-0000-0000-0000-0000000000f1', '{"sub":"web3:solana:Config1111111111111111111111111111111111111"}');
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000f1', false);
+update public.profiles set handle = 'fred',
+  links = '{"telegram":"https://t.me/fred","whatsapp":"https://wa.me/5548999990000"}' where id = auth.uid();
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000e1', false);
+update public.profiles set handle = 'erin', share_hidden = '{whatsapp,linkedin}',
+  links = '{"whatsapp":"https://wa.me/5511988887777","github":"https://github.com/erin","linkedin":"https://www.linkedin.com/in/erin","steam":"https://steamcommunity.com/id/erin"}'
+  where id = auth.uid();
+
+do $$ begin
+  begin
+    perform links from public.profiles where id = auth.uid();
+    raise exception 'FAIL: links legíveis por SELECT direto';
+  exception when insufficient_privilege then null; end;
+  begin
+    perform wallet from public.profiles where id = auth.uid();
+    raise exception 'FAIL: carteira legível por SELECT direto';
+  exception when insufficient_privilege then null; end;
+  if not ((select links from public.my_profile()) ? 'whatsapp') then
+    raise exception 'FAIL: my_profile não devolve os próprios links';
+  end if;
+  begin
+    update public.profiles set share_hidden = '{evil}' where id = auth.uid();
+    raise exception 'FAIL: chave desconhecida aceita no padrão';
+  exception when check_violation then null; end;
+  begin
+    perform public.live_qr_token(array['evil']);
+    raise exception 'FAIL: seleção inválida aceita no QR';
+  exception when invalid_parameter_value then null; end;
+end $$;
+
+create temp table qr3 as select public.live_qr_token(array['whatsapp', 'github']) as token;
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000f1', false);
+do $$
+declare
+  c public.connections;
+  l jsonb;
+begin
+  c := public.connect('erin', (select token from qr3), null, array['telegram']);
+  l := public.shared_links(c);
+  if not (l ? 'whatsapp' and l ? 'github') or l ? 'linkedin' or l ? 'steam' then
+    raise exception 'FAIL: F recebeu a seleção errada de E: %', l;
+  end if;
+  if public.shared_wallet(c) is not null then
+    raise exception 'FAIL: carteira de E liberada sem estar na seleção';
+  end if;
+  -- Forjar a linha não adianta: a função relê a conexão real pelo id.
+  c.shared_keys := private.share_keys();
+  if public.shared_links(c) ? 'linkedin' then
+    raise exception 'FAIL: shared_links confiou na linha forjada';
+  end if;
+end $$;
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000e1', false);
+do $$
+declare l jsonb;
+begin
+  select public.shared_links(c) into l from public.connections as c
+  where c.contact_id = '00000000-0000-0000-0000-0000000000f1';
+  if l is distinct from '{"telegram":"https://t.me/fred"}'::jsonb then
+    raise exception 'FAIL: E recebeu a seleção errada de F: %', l;
+  end if;
+end $$;
+
+-- Página pública: o padrão de E (sem WhatsApp e sem LinkedIn).
+reset role;
+set role anon;
+select set_config('request.jwt.claim.sub', '', false);
+do $$
+declare p public.profiles;
+begin
+  select * into p from public.get_profile('erin');
+  if p.links ? 'whatsapp' or p.links ? 'linkedin' or not (p.links ? 'github') or p.share_hidden <> '{}' then
+    raise exception 'FAIL: página pública vaza o que E escondeu: %', p.links;
+  end if;
+end $$;
+
 -- ---------------------------------------------------------------- Anônimo
 reset role;
 set role anon;

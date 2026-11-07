@@ -190,7 +190,7 @@ export function EventsPage() {
                         <p className="flex items-center gap-2">
                           <span className="truncate font-display font-semibold">{ev.name}</span>
                           {ev.id === currentId && (
-                            <span className="shrink-0 rounded-full bg-volt/15 px-2 py-0.5 text-xs font-semibold text-volt">{t.current}</span>
+                            <span className="shrink-0 rounded-full bg-cyan/15 px-2 py-0.5 text-xs font-semibold text-cyan">{t.current}</span>
                           )}
                         </p>
                         <EventMeta ev={ev} code />

@@ -25,7 +25,7 @@ export function LandingPage() {
         <ol className="flex flex-col gap-3">
           {t.steps.map((s, i) => (
             <li key={s.title} className="flex gap-4 rounded-card border border-line bg-surface p-4">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-volt/15 font-mono text-sm font-semibold text-volt">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-cyan/15 font-mono text-sm font-semibold text-cyan">
                 {i + 1}
               </span>
               <div>

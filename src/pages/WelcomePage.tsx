@@ -136,7 +136,7 @@ export function WelcomePage() {
       <div className="mt-5" role="progressbar" aria-valuemin={1} aria-valuemax={TOTAL_STEPS} aria-valuenow={step} aria-label={w.progress(step, TOTAL_STEPS)}>
         <p className="font-mono text-xs text-muted">{w.progress(step, TOTAL_STEPS)}</p>
         <div className="mt-2 h-1 overflow-hidden rounded-full bg-line">
-          <div className="h-full rounded-full bg-volt transition-all" style={{ width: `${(step / TOTAL_STEPS) * 100}%` }} />
+          <div className="h-full rounded-full bg-cyan transition-all" style={{ width: `${(step / TOTAL_STEPS) * 100}%` }} />
         </div>
       </div>
       <h1 className="mt-6 font-display text-3xl font-bold tracking-[-0.02em]">{titles[step - 1]}</h1>

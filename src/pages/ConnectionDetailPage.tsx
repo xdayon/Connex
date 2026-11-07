@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { ArrowLeft, Check, Copy, Lock, Trash2, UserX } from "lucide-react";
 import { ConnectedSheet } from "../components/ConnectedSheet";
-import { LinkButtons, ProfileExtras, ProfileHeader } from "../components/ProfileDetails";
+import {
+  LinkButtons,
+  ProfileExtras,
+  ProfileHeader,
+} from "../components/ProfileDetails";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Chip } from "../components/ui/Chip";
@@ -21,7 +25,13 @@ import { CONNECTION_SELECT, type ConnectionWithContact } from "../lib/types";
 import { useAsync } from "../lib/useAsync";
 
 function formatWhen(iso: string): string {
-  return new Date(iso).toLocaleString("en", { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleString("en", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 export function ConnectionDetailPage() {
@@ -31,7 +41,11 @@ export function ConnectionDetailPage() {
   const toast = useToast();
   const t = strings.detail;
   const { data, setData, loading, error, reload } = useAsync(async () => {
-    const { data: row, error: err } = await supabase.from("connections").select(CONNECTION_SELECT).eq("id", id).maybeSingle();
+    const { data: row, error: err } = await supabase
+      .from("connections")
+      .select(CONNECTION_SELECT)
+      .eq("id", id)
+      .maybeSingle();
     if (err) throw err;
     return row as ConnectionWithContact | null;
   }, [id]);
@@ -71,7 +85,14 @@ export function ConnectionDetailPage() {
     );
   }
   if (error) {
-    return <EmptyState icon={UserX} title={strings.connections.errorTitle} hint={friendlyError(error)} action={<Button onClick={reload}>{strings.common.retry}</Button>} />;
+    return (
+      <EmptyState
+        icon={UserX}
+        title={strings.connections.errorTitle}
+        hint={friendlyError(error)}
+        action={<Button onClick={reload}>{strings.common.retry}</Button>}
+      />
+    );
   }
   if (!data) {
     return (
@@ -79,18 +100,26 @@ export function ConnectionDetailPage() {
         icon={UserX}
         title={t.notFound}
         hint={t.notFoundHint}
-        action={<Button onClick={() => navigate("/connections", { replace: true })}>{strings.nav.connections}</Button>}
+        action={
+          <Button onClick={() => navigate("/connections", { replace: true })}>
+            {strings.nav.connections}
+          </Button>
+        }
       />
     );
   }
 
   const contact = data.contact;
-  const patch = (changes: Partial<ConnectionWithContact>) => setData({ ...data, ...changes });
+  const patch = (changes: Partial<ConnectionWithContact>) =>
+    setData({ ...data, ...changes });
 
   const saveNote = async () => {
     setSavingNote(true);
     const value = note.trim() || null;
-    const { error: err } = await supabase.from("connections").update({ note: value }).eq("id", data.id);
+    const { error: err } = await supabase
+      .from("connections")
+      .update({ note: value })
+      .eq("id", data.id);
     setSavingNote(false);
     if (err) {
       toast(friendlyError(err), "error");
@@ -104,7 +133,10 @@ export function ConnectionDetailPage() {
   const saveTags = async (tags: string[]) => {
     const prev = data.tags;
     patch({ tags });
-    const { error: err } = await supabase.from("connections").update({ tags }).eq("id", data.id);
+    const { error: err } = await supabase
+      .from("connections")
+      .update({ tags })
+      .eq("id", data.id);
     if (err) {
       patch({ tags: prev });
       toast(friendlyError(err), "error");
@@ -128,7 +160,10 @@ export function ConnectionDetailPage() {
 
   const remove = async () => {
     setRemoving(true);
-    const { error: err } = await supabase.from("connections").delete().eq("id", data.id);
+    const { error: err } = await supabase
+      .from("connections")
+      .delete()
+      .eq("id", data.id);
     setRemoving(false);
     if (err) {
       toast(friendlyError(err), "error");
@@ -142,15 +177,23 @@ export function ConnectionDetailPage() {
 
   return (
     <article className="flex flex-col gap-5">
-      <button type="button" onClick={() => navigate(-1)} className="-ml-2 inline-flex min-h-11 items-center gap-1 self-start px-2 text-sm text-muted hover:text-text">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="-ml-2 inline-flex min-h-11 items-center gap-1 self-start px-2 text-sm text-muted hover:text-text"
+      >
         <ArrowLeft size={18} aria-hidden />
         {strings.common.back}
       </button>
 
-      <Card className="flex flex-col gap-1 border-volt/30 p-4">
-        <p className="font-display text-lg font-bold">{data.event ? `${t.metAt} ${data.event.name}` : strings.brain.met}</p>
+      <Card className="flex flex-col gap-1 border-cyan/30 p-4">
+        <p className="font-display text-lg font-bold">
+          {data.event ? `${t.metAt} ${data.event.name}` : strings.brain.met}
+        </p>
         <p className="text-sm text-muted">{formatWhen(data.met_at)}</p>
-        <p className={`mt-1 inline-flex items-center gap-1.5 text-xs font-semibold ${data.verified ? "text-volt" : "text-muted"}`}>
+        <p
+          className={`mt-1 inline-flex items-center gap-1.5 text-xs font-semibold ${data.verified ? "text-cyan" : "text-muted"}`}
+        >
           {data.verified ? <VerifiedBadge /> : null}
           {data.verified ? t.contextLive : t.contextBadge}
         </p>
@@ -161,22 +204,45 @@ export function ConnectionDetailPage() {
           <Card className="p-5">
             <ProfileHeader profile={contact} />
           </Card>
-          <LinkButtons profile={contact} />
-          <ProfileExtras profile={contact} labels={{ skills: t.skills, lookingFor: t.lookingFor, offering: t.offering }} />
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface p-3">
-            <div className="min-w-0">
-              <p className="text-xs uppercase tracking-widest text-muted">{t.wallet}</p>
-              <p className="font-mono text-sm">{shortAddress(contact.wallet)}</p>
-            </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<Copy size={16} aria-hidden />}
-              onClick={async () => toast((await copyText(contact.wallet)) ? strings.common.copied : strings.errors.generic, "success")}
-            >
-              {strings.common.copy}
-            </Button>
+          <div className="flex flex-col gap-2">
+            <LinkButtons links={data.shared_links} />
+            <p className="text-xs text-muted">{strings.share.sharedWithYou}</p>
           </div>
+          <ProfileExtras
+            profile={contact}
+            labels={{
+              skills: t.skills,
+              lookingFor: t.lookingFor,
+              offering: t.offering,
+            }}
+          />
+          {data.shared_wallet && (
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface p-3">
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-widest text-muted">
+                  {t.wallet}
+                </p>
+                <p className="font-mono text-sm">
+                  {shortAddress(data.shared_wallet)}
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Copy size={16} aria-hidden />}
+                onClick={async () =>
+                  toast(
+                    (await copyText(data.shared_wallet ?? ""))
+                      ? strings.common.copied
+                      : strings.errors.generic,
+                    "success",
+                  )
+                }
+              >
+                {strings.common.copy}
+              </Button>
+            </div>
+          )}
         </>
       ) : (
         <EmptyState icon={UserX} title={t.noAccess} />
@@ -209,7 +275,12 @@ export function ConnectionDetailPage() {
           <p className="mb-2 text-sm font-medium">{t.tags}</p>
           <div className="mb-3 flex flex-wrap gap-2">
             {data.tags.map((tag) => (
-              <Chip key={tag} onRemove={() => void saveTags(data.tags.filter((x) => x !== tag))}>
+              <Chip
+                key={tag}
+                onRemove={() =>
+                  void saveTags(data.tags.filter((x) => x !== tag))
+                }
+              >
                 {tag}
               </Chip>
             ))}
@@ -227,23 +298,40 @@ export function ConnectionDetailPage() {
               onChange={(e) => setTagInput(e.target.value)}
               placeholder={t.tagPlaceholder}
               aria-label={t.tagPlaceholder}
-              className="min-h-11 min-w-0 flex-1 rounded-2xl border border-line bg-surface-2 px-4 text-base placeholder:text-muted/70 focus:border-volt focus:outline-none"
+              className="min-h-11 min-w-0 flex-1 rounded-2xl border border-line bg-surface-2 px-4 text-base placeholder:text-muted/70 focus:border-cyan focus:outline-none"
             />
-            <Button type="submit" variant="secondary" disabled={!tagInput.trim()}>
+            <Button
+              type="submit"
+              variant="secondary"
+              disabled={!tagInput.trim()}
+            >
               {t.add}
             </Button>
           </form>
         </div>
       </Card>
 
-      <Button variant="danger" full icon={<Trash2 size={18} aria-hidden />} onClick={() => setConfirmRemove(true)}>
+      <Button
+        variant="danger"
+        full
+        icon={<Trash2 size={18} aria-hidden />}
+        onClick={() => setConfirmRemove(true)}
+      >
         {t.remove}
       </Button>
 
-      <Sheet open={confirmRemove} onClose={() => setConfirmRemove(false)} title={t.removeTitle}>
+      <Sheet
+        open={confirmRemove}
+        onClose={() => setConfirmRemove(false)}
+        title={t.removeTitle}
+      >
         <p className="-mt-2 text-sm text-muted">{t.removeBody}</p>
         <div className="mt-5 flex gap-3">
-          <Button variant="secondary" full onClick={() => setConfirmRemove(false)}>
+          <Button
+            variant="secondary"
+            full
+            onClick={() => setConfirmRemove(false)}
+          >
             {strings.common.cancel}
           </Button>
           <Button variant="danger" full loading={removing} onClick={remove}>

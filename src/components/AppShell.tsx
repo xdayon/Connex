@@ -30,7 +30,7 @@ function EventChip() {
       aria-label={`${strings.header.event}: ${data.name}`}
       className="inline-flex h-9 max-w-[55%] items-center gap-2 rounded-full border border-line bg-surface px-3 text-sm text-text"
     >
-      <span className="size-2 shrink-0 rounded-full bg-volt" aria-hidden />
+      <span className="size-2 shrink-0 rounded-full bg-cyan" aria-hidden />
       <span className="truncate">{data.name}</span>
     </Link>
   );
@@ -63,8 +63,8 @@ export function AppShell() {
                   aria-label={label}
                   className={({ isActive }) =>
                     center
-                      ? `-mt-6 mb-2 flex size-14 items-center justify-center rounded-full bg-volt text-ink shadow-[0_0_0_4px_var(--color-ink)] transition active:scale-95 ${isActive ? "ring-2 ring-text" : ""}`
-                      : `flex h-16 w-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition ${isActive ? "text-volt" : "text-muted"}`
+                      ? `-mt-6 mb-2 flex size-14 items-center justify-center rounded-full bg-cyan text-ink shadow-[0_0_0_4px_var(--color-ink)] transition active:scale-95 ${isActive ? "ring-2 ring-text" : ""}`
+                      : `flex h-16 w-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition ${isActive ? "text-cyan" : "text-muted"}`
                   }
                 >
                   <Icon size={center ? 26 : 22} />

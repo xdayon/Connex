@@ -19,7 +19,7 @@ export function Switch({ checked, onChange, label, hint, disabled }: Props) {
         aria-labelledby={id}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={`relative h-7 w-12 shrink-0 rounded-full border transition disabled:opacity-50 ${checked ? "border-volt bg-volt" : "border-line bg-surface-2"}`}
+        className={`relative h-7 w-12 shrink-0 rounded-full border transition disabled:opacity-50 ${checked ? "border-cyan bg-cyan" : "border-line bg-surface-2"}`}
       >
         <span
           className={`absolute left-0.5 top-0.5 size-5.5 rounded-full transition-transform duration-150 ${checked ? "translate-x-5 bg-ink" : "bg-muted"}`}

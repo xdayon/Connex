@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sess } = await supabase.auth.getSession();
     const uid = sess.session?.user.id;
     if (!uid) return null;
-    const { data } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
+    const { data } = await supabase.rpc("my_profile").maybeSingle();
     const next = (data as Profile | null) ?? null;
     setProfile(next);
     return next;

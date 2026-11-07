@@ -36,7 +36,7 @@ export function QRCode({ value, size = 260, label, className = "" }: Props) {
       style={{ aspectRatio: "1 / 1", height: "auto" }}
     >
       <rect width={box} height={box} fill="#ffffff" />
-      <path transform={`translate(${quiet} ${quiet})`} d={path} fill="#07090f" />
+      <path transform={`translate(${quiet} ${quiet})`} d={path} fill="#12141e" />
     </svg>
   );
 }

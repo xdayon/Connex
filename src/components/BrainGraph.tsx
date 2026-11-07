@@ -310,7 +310,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
                     width={w}
                     height={n.r * 2}
                     rx={n.r}
-                    style={{ fill: on ? "var(--color-volt)" : "var(--color-surface-2)", stroke: on ? "var(--color-volt)" : "var(--color-violet)" }}
+                    style={{ fill: on ? "var(--color-cyan)" : "var(--color-surface-2)", stroke: on ? "var(--color-cyan)" : "var(--color-lilac)" }}
                     strokeWidth={1.5}
                   />
                   <text textAnchor="middle" dy="0.35em" fontSize={11} className="font-mono" style={{ fill: on ? "var(--color-ink)" : "var(--color-text)" }}>
@@ -324,7 +324,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
               return (
                 <g key={n.id} {...common} transform={`translate(${x} ${y})`} onClick={() => tapNode(n)} className={`${common.className} cursor-pointer`}>
                   <circle r={14} fill="transparent" />
-                  <circle r={n.r} style={{ fill: on ? "var(--color-volt)" : "var(--color-violet)" }} />
+                  <circle r={n.r} style={{ fill: on ? "var(--color-cyan)" : "var(--color-lilac)" }} />
                   <text y={-10} textAnchor="middle" fontSize={10} className="font-mono" style={{ fill: "var(--color-muted)" }}>
                     {truncate(n.label, 14)}
                   </text>
@@ -341,7 +341,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
                 className={`${common.className} ${isMe ? "" : "cursor-pointer"}`}
               >
                 {!isMe && <title>{n.label}</title>}
-                <circle r={n.r + 2} style={{ fill: "var(--color-surface-2)", stroke: isMe || n.verified ? "var(--color-volt)" : "var(--color-line)" }} strokeWidth={2} />
+                <circle r={n.r + 2} style={{ fill: "var(--color-surface-2)", stroke: isMe || n.verified ? "var(--color-cyan)" : "var(--color-line)" }} strokeWidth={2} />
                 {n.avatar ? (
                   <image href={n.avatar} x={-n.r} y={-n.r} width={n.r * 2} height={n.r * 2} clipPath={`url(#${clipId})`} preserveAspectRatio="xMidYMid slice" />
                 ) : (
@@ -367,7 +367,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
 
       {chip && (
         <div className="absolute inset-x-3 bottom-3 flex">
-          <span className="inline-flex min-h-9 max-w-full items-center gap-1 rounded-full border border-volt bg-surface-2/95 py-1 pl-3 pr-1 text-sm text-text backdrop-blur">
+          <span className="inline-flex min-h-9 max-w-full items-center gap-1 rounded-full border border-cyan bg-surface-2/95 py-1 pl-3 pr-1 text-sm text-text backdrop-blur">
             <span className="truncate">{chip}</span>
             {focusNode && (
               <button

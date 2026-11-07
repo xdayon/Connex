@@ -30,7 +30,7 @@ export function AvatarUpload({ uid, name, src, onUploaded, label }: Props) {
     <div className="flex items-center gap-4">
       <button type="button" aria-label={label} onClick={() => input.current?.click()} disabled={busy} className="relative rounded-full">
         <Avatar src={src} name={name} size="xl" />
-        <span className="absolute -bottom-1 -right-1 flex size-9 items-center justify-center rounded-full border-2 border-ink bg-volt text-ink">
+        <span className="absolute -bottom-1 -right-1 flex size-9 items-center justify-center rounded-full border-2 border-ink bg-cyan text-ink">
           {busy ? <Loader2 size={16} className="animate-spin" aria-hidden /> : <Camera size={16} aria-hidden />}
         </span>
       </button>

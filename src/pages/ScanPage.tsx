@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { useNavigate } from "react-router";
 import type QrScanner from "qr-scanner";
 import { CameraOff, FlipHorizontal2, Flashlight, FlashlightOff, ScanLine } from "lucide-react";
+import { ShareSelector } from "../components/ShareSelector";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Sheet } from "../components/ui/Sheet";
@@ -12,8 +13,11 @@ import { getCurrentEventId, setCurrentEventId } from "../lib/currentEvent";
 import { friendlyError, isMessage } from "../lib/errors";
 import { supabase } from "../lib/supabase";
 import type { Connection, EventRow } from "../lib/types";
+import { useShareSelection } from "../lib/useShareSelection";
+import { useAuth } from "../providers/AuthProvider";
 
-const ALLOWED_ORIGINS = [window.location.origin, "https://connex.dayon-x.workers.dev"];
+// Crachás impressos e QRs antigos ainda podem apontar para o endereço workers.dev.
+const ALLOWED_ORIGINS = [window.location.origin, "https://connex.contact", "https://connex.dayon-x.workers.dev"];
 const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
 
 type Target = { kind: "profile"; handle: string; token: string | null } | { kind: "event"; code: string };
@@ -39,6 +43,10 @@ export function ScanPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const t = strings.scan;
+  const { profile } = useAuth();
+  const selection = useShareSelection(profile);
+  const shareRef = useRef(selection.payload);
+  shareRef.current = selection.payload;
   const video = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<QrScanner | null>(null);
   const busy = useRef(false);
@@ -57,7 +65,7 @@ export function ScanPage() {
 
   const doConnect = useCallback(
     async (handle: string, token: string | null): Promise<boolean> => {
-      const { data, error } = await supabase.rpc("connect", { p_handle: handle, p_token: token, p_event_id: getCurrentEventId() });
+      const { data, error } = await supabase.rpc("connect", { p_handle: handle, p_token: token, p_event_id: getCurrentEventId(), p_share: shareRef.current });
       if (error) {
         if (token && isMessage(error, "qr expired")) {
           setExpired(handle);
@@ -212,6 +220,8 @@ export function ScanPage() {
         <p className="mt-1 text-muted">{t.hint}</p>
       </div>
 
+      <ShareSelector selection={selection} />
+
       {problem ? (
         <EmptyState
           icon={CameraOff}
@@ -233,7 +243,7 @@ export function ScanPage() {
               {t.requesting}
             </div>
           )}
-          <div aria-hidden className="pointer-events-none absolute inset-[16%] rounded-3xl border-2 border-volt/80 shadow-[0_0_0_999px_rgba(7,9,15,0.45)]" />
+          <div aria-hidden className="pointer-events-none absolute inset-[16%] rounded-3xl border-2 border-cyan/80 shadow-[0_0_0_999px_rgba(7,9,15,0.45)]" />
           {working && (
             <div className="absolute inset-x-0 bottom-3 flex justify-center" role="status">
               <span className="rounded-full bg-ink/80 px-4 py-2 text-sm text-text">{t.connecting}</span>
@@ -248,7 +258,7 @@ export function ScanPage() {
                 onClick={toggleFlash}
                 className="flex size-11 items-center justify-center rounded-full bg-ink/70 text-text backdrop-blur"
               >
-                {flashOn ? <Flashlight size={20} className="text-volt" /> : <FlashlightOff size={20} />}
+                {flashOn ? <Flashlight size={20} className="text-cyan" /> : <FlashlightOff size={20} />}
               </button>
             )}
             {multiCam && (
@@ -262,7 +272,7 @@ export function ScanPage() {
 
       <form onSubmit={submitHandle} className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4" noValidate>
         <div className="flex items-center gap-2 text-sm font-medium">
-          <ScanLine size={16} className="text-volt" aria-hidden />
+          <ScanLine size={16} className="text-cyan" aria-hidden />
           {t.enterHandle}
         </div>
         <TextField

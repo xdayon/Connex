@@ -6,15 +6,28 @@ import { strings } from "../../i18n/strings";
 import { friendlyError } from "../../lib/errors";
 import { normalizeLink } from "../../lib/links";
 import { supabase } from "../../lib/supabase";
-import { LINK_KEYS, type LinkKey, type Links, type Profile } from "../../lib/types";
+import {
+  LINK_KEYS,
+  type LinkKey,
+  type Links,
+  type Profile,
+  type ShareKey,
+} from "../../lib/types";
 
-type Props = { profile: Profile; onDone: (saved: boolean) => void | Promise<void> };
+type Props = {
+  profile: Profile;
+  onDone: (saved: boolean) => void | Promise<void>;
+};
 
 export function StepLinks({ profile, onDone }: Props) {
   const toast = useToast();
   const [values, setValues] = useState<Record<LinkKey, string>>(
-    () => Object.fromEntries(LINK_KEYS.map((k) => [k, profile.links?.[k] ?? ""])) as Record<LinkKey, string>,
+    () =>
+      Object.fromEntries(
+        LINK_KEYS.map((k) => [k, profile.links?.[k] ?? ""]),
+      ) as Record<LinkKey, string>,
   );
+  const [hidden, setHidden] = useState<ShareKey[]>(profile.share_hidden ?? []);
   const [errors, setErrors] = useState<Partial<Record<LinkKey, string>>>({});
   const [busy, setBusy] = useState(false);
 
@@ -29,7 +42,10 @@ export function StepLinks({ profile, onDone }: Props) {
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setBusy(true);
-    const { error } = await supabase.from("profiles").update({ links: out }).eq("id", profile.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ links: out, share_hidden: hidden })
+      .eq("id", profile.id);
     if (error) {
       setBusy(false);
       toast(friendlyError(error), "error");
@@ -40,11 +56,23 @@ export function StepLinks({ profile, onDone }: Props) {
 
   return (
     <div className="mt-6 flex flex-col gap-5">
-      <LinkFields values={values} errors={errors} onChange={(k, v) => setValues((l) => ({ ...l, [k]: v }))} />
+      <LinkFields
+        values={values}
+        errors={errors}
+        onChange={(k, v) => setValues((l) => ({ ...l, [k]: v }))}
+        hidden={hidden}
+        onHiddenChange={setHidden}
+        wallet={profile.wallet}
+      />
       <Button size="lg" full loading={busy} onClick={save}>
         {strings.welcomeSteps.continue}
       </Button>
-      <Button variant="ghost" full disabled={busy} onClick={() => void onDone(false)}>
+      <Button
+        variant="ghost"
+        full
+        disabled={busy}
+        onClick={() => void onDone(false)}
+      >
         {strings.welcomeSteps.skip}
       </Button>
     </div>

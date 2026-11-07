@@ -32,7 +32,7 @@ export function SignInSheet({ open, busy, error, onClose, onChoose, onChooseDev 
     <Sheet open={open} onClose={onClose} title={strings.wallet.chooseTitle}>
       <p className="-mt-3 mb-4 text-sm text-muted">{strings.wallet.chooseSubtitle}</p>
       {busy && (
-        <p className="mb-3 flex items-center gap-2 text-sm text-volt" role="status">
+        <p className="mb-3 flex items-center gap-2 text-sm text-cyan" role="status">
           <Loader2 size={16} className="animate-spin" aria-hidden />
           {strings.wallet.signing}
         </p>
@@ -71,7 +71,7 @@ export function SignInSheet({ open, busy, error, onClose, onChoose, onChooseDev 
           {import.meta.env.DEV && (
             <li>
               <button type="button" disabled={busy} onClick={onChooseDev} className={rowClass}>
-                <span className="flex size-8 items-center justify-center rounded-lg bg-violet/20 text-violet">
+                <span className="flex size-8 items-center justify-center rounded-lg bg-lilac/20 text-lilac">
                   <FlaskConical size={18} aria-hidden />
                 </span>
                 <span className="flex-1 font-medium">{strings.wallet.dev}</span>
