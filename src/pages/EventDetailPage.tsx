@@ -152,7 +152,7 @@ export function EventDetailPage() {
         <>
           <div>
             <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
-              <Users size={18} className="text-violet" aria-hidden />
+              <Users size={18} className="text-lilac" aria-hidden />
               {t.whosHere(scored.length)}
             </h2>
             <div className="mb-3 flex flex-wrap gap-2">
@@ -179,7 +179,7 @@ export function EventDetailPage() {
                       <Avatar src={p.avatar_url} name={profileName(p)} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">{profileName(p)}</p>
-                        {m.reason && <p className="truncate text-xs font-semibold text-violet">{reasonText(m.reason)}</p>}
+                        {m.reason && <p className="truncate text-xs font-semibold text-lilac">{reasonText(m.reason)}</p>}
                         {p.headline && <p className="truncate text-sm text-muted">{p.headline}</p>}
                         {p.skills.length > 0 && (
                           <div className="mt-1 flex flex-wrap gap-1">
@@ -195,7 +195,7 @@ export function EventDetailPage() {
                         p.verified ? (
                           <VerifiedBadge text={t.inNetwork} />
                         ) : (
-                          <span title={t.inNetwork} role="img" aria-label={t.inNetwork} className="inline-flex text-volt">
+                          <span title={t.inNetwork} role="img" aria-label={t.inNetwork} className="inline-flex text-cyan">
                             <Check size={16} />
                           </span>
                         )
@@ -230,7 +230,7 @@ export function EventDetailPage() {
             {invite && (
               <div className="mt-4 flex flex-col items-center gap-4">
                 <p className="text-xs font-semibold uppercase tracking-widest text-muted">{t.code}</p>
-                <p className="font-mono text-4xl font-bold tracking-[0.25em] text-volt">{event.join_code}</p>
+                <p className="font-mono text-4xl font-bold tracking-[0.25em] text-cyan">{event.join_code}</p>
                 <div className="rounded-3xl bg-white p-2">
                   <QRCode value={link} size={200} label={t.qrHint} />
                 </div>

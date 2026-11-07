@@ -1,10 +1,20 @@
-export const LINK_KEYS = ["telegram", "x", "website", "github", "farcaster", "linkedin", "discord", "superteam", "calendar", "instagram", "youtube", "tiktok"] as const;
+// Mesma ordem e mesmas chaves de private.link_keys() no banco.
+export const LINK_KEYS = [
+  "whatsapp", "telegram", "x", "instagram", "linkedin", "github", "farcaster", "discord",
+  "superteam", "website", "calendar", "youtube", "tiktok", "twitch", "steam", "reddit", "bluesky",
+] as const;
 export type LinkKey = (typeof LINK_KEYS)[number];
 export type Links = Partial<Record<LinkKey, string>>;
 
+// O que dá para compartilhar com alguém: as redes e a carteira (private.share_keys()).
+export const SHARE_KEYS = [...LINK_KEYS, "wallet"] as const;
+export type ShareKey = (typeof SHARE_KEYS)[number];
+
+// Perfil completo: só o próprio dono recebe assim (rpc my_profile / ensure_profile).
+// get_profile devolve o mesmo formato, mas filtrado: wallet pode vir null e share_hidden vazio.
 export type Profile = {
   id: string;
-  wallet: string;
+  wallet: string | null;
   handle: string | null;
   display_name: string | null;
   headline: string | null;
@@ -13,6 +23,7 @@ export type Profile = {
   company: string | null;
   location: string | null;
   links: Links;
+  share_hidden: ShareKey[];
   skills: string[];
   looking_for: string[];
   offering: string[];
@@ -61,6 +72,7 @@ export type Connection = {
   event_id: string | null;
   verified: boolean;
   method: "live_qr" | "badge";
+  shared_keys: ShareKey[];
   note: string | null;
   tags: string[];
   met_at: string;
@@ -68,12 +80,20 @@ export type Connection = {
   updated_at: string;
 };
 
+// Perfil de outra pessoa lido direto da tabela: sem links, carteira e padrão (o banco nega essas colunas).
+export type ContactProfile = Omit<Profile, "links" | "wallet" | "share_hidden">;
+export const PROFILE_COLS =
+  "id,handle,display_name,headline,bio,avatar_url,company,location,skills,looking_for,offering,is_public,skr_name,seeker_verified,created_at,updated_at";
+
 export type ConnectionWithContact = Connection & {
-  contact: Profile | null;
+  contact: ContactProfile | null;
   event: { id: string; name: string } | null;
+  // O que o contato liberou para mim (colunas calculadas no banco).
+  shared_links: Links;
+  shared_wallet: string | null;
 };
 
-export const CONNECTION_SELECT = "*, contact:profiles!connections_contact_id_fkey(*), event:events(id,name)";
+export const CONNECTION_SELECT = `*, shared_links, shared_wallet, contact:profiles!connections_contact_id_fkey(${PROFILE_COLS}), event:events(id,name)`;
 
 export function profileName(p: Pick<Profile, "display_name" | "handle"> | null | undefined): string {
   return p?.display_name?.trim() || (p?.handle ? `@${p.handle}` : "Connex user");

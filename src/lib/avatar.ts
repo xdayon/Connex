@@ -13,7 +13,7 @@ export async function prepareAvatar(file: File): Promise<{ blob: Blob; ext: "web
   canvas.height = 512;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas unavailable");
-  ctx.fillStyle = "#07090f";
+  ctx.fillStyle = "#12141e";
   ctx.fillRect(0, 0, 512, 512);
   ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 512, 512);
   bitmap.close();

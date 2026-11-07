@@ -47,7 +47,7 @@ export function PublicProfilePage() {
     if (!data?.handle) return;
     setBusy(true);
     const call = (t: string | null) =>
-      supabase.rpc("connect", { p_handle: data.handle, p_token: t, p_event_id: getCurrentEventId() });
+      supabase.rpc("connect", { p_handle: data.handle, p_token: t, p_event_id: getCurrentEventId(), p_share: null });
     let res = await call(token);
     if (res.error && token && isMessage(res.error, "qr expired")) res = await call(null);
     setBusy(false);
@@ -126,11 +126,11 @@ export function PublicProfilePage() {
               {strings.auth.signInToConnect}
             </Button>
           ))}
-        <Button variant="secondary" full onClick={() => downloadVCard(data)} icon={<Download size={18} aria-hidden />}>
+        <Button variant="secondary" full onClick={() => downloadVCard(data, data.links)} icon={<Download size={18} aria-hidden />}>
           {strings.publicProfile.saveContact}
         </Button>
       </div>
-      <LinkButtons profile={data} />
+      <LinkButtons links={data.links} />
       <ProfileExtras profile={data} />
     </article>
   );

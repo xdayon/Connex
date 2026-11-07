@@ -1,9 +1,9 @@
 import { useId, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
 
-type FieldProps = { label?: string; hint?: string; error?: string | null; value?: string; maxLength?: number };
+type FieldProps = { label?: ReactNode; hint?: string; error?: string | null; value?: string; maxLength?: number };
 
 const inputClass =
-  "w-full rounded-2xl border bg-surface-2 px-4 text-base text-text placeholder:text-muted/70 transition focus:border-volt focus:outline-none disabled:opacity-60";
+  "w-full rounded-2xl border bg-surface-2 px-4 text-base text-text placeholder:text-muted/70 transition focus:border-cyan focus:outline-none disabled:opacity-60";
 
 function Shell({
   id,
@@ -14,7 +14,7 @@ function Shell({
   children,
 }: {
   id: string;
-  label?: string;
+  label?: ReactNode;
   hint?: string;
   error?: string | null;
   counter?: string;

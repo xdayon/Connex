@@ -35,7 +35,7 @@ function emphasize(text: string, tokens: string[]): ReactNode {
   const parts = text.split(new RegExp(`(${escaped.join("|")})`, "gi"));
   return parts.map((part, i) =>
     i % 2 === 1 ? (
-      <mark key={i} className="rounded-sm bg-volt/25 px-0.5 text-text">
+      <mark key={i} className="rounded-sm bg-cyan/25 px-0.5 text-text">
         {part}
       </mark>
     ) : (
@@ -184,7 +184,7 @@ export function ConnectionsPage() {
                 type="button"
                 aria-pressed={view === v}
                 onClick={() => chooseView(v)}
-                className={`inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition ${view === v ? "bg-volt text-ink" : "text-muted"}`}
+                className={`inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition ${view === v ? "bg-cyan text-ink" : "text-muted"}`}
               >
                 {v === "list" ? <List size={16} aria-hidden /> : <Network size={16} aria-hidden />}
                 {v === "list" ? b.viewList : b.viewGraph}
@@ -218,14 +218,14 @@ export function ConnectionsPage() {
       ) : (
         <>
           <div className="relative">
-            <Search size={20} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-volt" aria-hidden />
+            <Search size={20} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-cyan" aria-hidden />
             <input
               type="search"
               value={raw}
               onChange={(e) => setRaw(e.target.value)}
               placeholder={b.placeholders[phIndex]}
               aria-label={b.askLabel}
-              className="min-h-14 w-full rounded-2xl border border-line bg-surface-2 pl-12 pr-4 text-lg placeholder:text-muted/70 focus:border-volt focus:outline-none"
+              className="min-h-14 w-full rounded-2xl border border-line bg-surface-2 pl-12 pr-4 text-lg placeholder:text-muted/70 focus:border-cyan focus:outline-none"
             />
           </div>
 

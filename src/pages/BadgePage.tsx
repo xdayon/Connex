@@ -3,6 +3,7 @@ import { ChevronRight, Copy, Share2, WifiOff } from "lucide-react";
 import { Link } from "react-router";
 import { ConnectedSheet } from "../components/ConnectedSheet";
 import { QRCode } from "../components/QRCode";
+import { ShareSelector } from "../components/ShareSelector";
 import { Avatar } from "../components/ui/Avatar";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
@@ -11,6 +12,7 @@ import { strings } from "../i18n/strings";
 import { copyText } from "../lib/clipboard";
 import { supabase } from "../lib/supabase";
 import { CONNECTION_SELECT, profileName, type ConnectionWithContact } from "../lib/types";
+import { useShareSelection } from "../lib/useShareSelection";
 import { useAuth } from "../providers/AuthProvider";
 
 const REFRESH_MS = 25_000;
@@ -27,7 +29,7 @@ function CountdownRing({ fraction }: { fraction: number }) {
         cy="10"
         r={r}
         fill="none"
-        stroke="var(--color-volt)"
+        stroke="var(--color-cyan)"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeDasharray={c}
@@ -48,21 +50,30 @@ export function BadgePage() {
   const [pulse, setPulse] = useState(0);
   const [connected, setConnected] = useState<ConnectionWithContact | null>(null);
 
+  const selection = useShareSelection(profile);
+  const shareRef = useRef(selection.payload);
+  shareRef.current = selection.payload;
+  const shareSig = (selection.payload ?? []).join(",") + (selection.payload ? "|c" : "|d");
+
   const nextAt = useRef(0);
   const inflight = useRef(false);
+  const sigRef = useRef(shareSig);
+  sigRef.current = shareSig;
   const shown = useRef(new Map<string, number>());
   const openId = useRef<string | null>(null);
 
   const fetchToken = useCallback(async () => {
     if (inflight.current) return;
     inflight.current = true;
+    const sig = sigRef.current;
     try {
-      const { data, error } = await supabase.rpc("live_qr_token");
+      const { data, error } = await supabase.rpc("live_qr_token", { p_share: shareRef.current });
       if (error || typeof data !== "string") throw error ?? new Error("bad token");
       setToken(data);
       setLive(true);
       setPulse((p) => p + 1);
       nextAt.current = Date.now() + REFRESH_MS;
+      if (sig !== sigRef.current) nextAt.current = 0;
     } catch {
       setLive(false);
       nextAt.current = Date.now() + RETRY_MS;
@@ -95,6 +106,11 @@ export function BadgePage() {
       window.removeEventListener("online", refreshNow);
     };
   }, [fetchToken]);
+
+  useEffect(() => {
+    nextAt.current = 0;
+    void fetchToken();
+  }, [shareSig, fetchToken]);
 
   useEffect(() => {
     let sentinel: WakeLockSentinel | null = null;
@@ -183,10 +199,10 @@ export function BadgePage() {
         <Avatar src={profile.avatar_url} name={name} size="lg" />
         <div className="min-w-0 flex-1">
           <h1 className="truncate font-display text-xl font-bold tracking-[-0.02em]">{name}</h1>
-          <p className="truncate font-mono text-sm text-volt">@{handle}</p>
+          <p className="truncate font-mono text-sm text-cyan">@{handle}</p>
           {sub && <p className="mt-0.5 truncate text-sm text-muted">{sub}</p>}
           {profile.seeker_verified && (
-            <span className="mt-1 inline-flex items-center rounded-full bg-violet/20 px-2 py-0.5 text-xs font-semibold text-violet">
+            <span className="mt-1 inline-flex items-center rounded-full bg-lilac/20 px-2 py-0.5 text-xs font-semibold text-lilac">
               {strings.ui.seeker}
             </span>
           )}
@@ -194,7 +210,7 @@ export function BadgePage() {
       </div>
 
       <div className="flex w-full flex-col items-center gap-4">
-        <div key={pulse} className={`rounded-[28px] bg-white p-3 ring-2 ring-volt/70 ${pulse > 1 ? "anim-qr-pulse" : ""}`}>
+        <div key={pulse} className={`rounded-[28px] bg-white p-3 ring-2 ring-cyan/70 ${pulse > 1 ? "anim-qr-pulse" : ""}`}>
           {tried ? (
             <QRCode value={url} size={272} label={strings.badge.qrLabel} />
           ) : (
@@ -209,7 +225,7 @@ export function BadgePage() {
         ) : live ? (
           <p className="flex items-center gap-2 text-sm text-muted" role="status">
             <CountdownRing fraction={secondsLeft / (REFRESH_MS / 1000)} />
-            <span className="font-semibold text-volt">{strings.badge.live}</span>
+            <span className="font-semibold text-cyan">{strings.badge.live}</span>
             <span>
               · {strings.badge.refreshesIn} <span className="inline-block w-6 text-right font-mono text-text">{secondsLeft}s</span>
             </span>
@@ -221,6 +237,8 @@ export function BadgePage() {
           </p>
         )}
       </div>
+
+      <ShareSelector selection={selection} />
 
       <div className="flex w-full gap-3">
         <Button full onClick={share} icon={<Share2 size={18} aria-hidden />}>
@@ -240,7 +258,7 @@ export function BadgePage() {
                 <span className="font-mono text-xs text-muted">{strings.badge.completeProgress(doneCount, 3)}</span>
               </p>
               <div className="mt-2 h-1 overflow-hidden rounded-full bg-line">
-                <div className="h-full rounded-full bg-volt" style={{ width: `${(doneCount / 3) * 100}%` }} />
+                <div className="h-full rounded-full bg-cyan" style={{ width: `${(doneCount / 3) * 100}%` }} />
               </div>
               <p className="mt-2 text-sm text-muted">{hasLinks ? strings.badge.completeSkills : strings.badge.completeLinks}</p>
             </div>

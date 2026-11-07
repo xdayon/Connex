@@ -11,7 +11,7 @@ type Props = {
 };
 
 export function Chip({ children, onRemove, onClick, selected = false, className = "" }: Props) {
-  const tone = selected ? "border-volt bg-volt text-ink" : "border-line bg-surface-2 text-text";
+  const tone = selected ? "border-cyan bg-cyan text-ink" : "border-line bg-surface-2 text-text";
   const cls = `inline-flex min-h-8 items-center gap-1 rounded-full border px-3 text-sm ${tone} ${className}`;
   if (onClick) {
     return (

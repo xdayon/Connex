@@ -24,7 +24,7 @@ export function Avatar({ src, name, size = "md", className = "" }: Props) {
   const showImage = src && failed !== src;
   return (
     <span
-      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-linear-to-br from-violet to-volt font-display font-bold text-ink ${dims[size]} ${className}`}
+      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-linear-to-br from-lilac to-cyan font-display font-bold text-ink ${dims[size]} ${className}`}
     >
       {showImage ? (
         <img src={src} alt="" loading="lazy" onError={() => setFailed(src)} className="size-full object-cover" />

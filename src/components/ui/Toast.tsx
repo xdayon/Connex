@@ -12,7 +12,7 @@ export function useToast(): ToastFn {
 }
 
 const icons = { success: CheckCircle2, error: AlertCircle, info: Info };
-const tones: Record<Kind, string> = { success: "text-volt", error: "text-danger", info: "text-violet" };
+const tones: Record<Kind, string> = { success: "text-cyan", error: "text-danger", info: "text-lilac" };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Item[]>([]);

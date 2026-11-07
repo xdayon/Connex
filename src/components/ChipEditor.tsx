@@ -45,7 +45,7 @@ export function ChipEditor({ label, items, onChange, maxItems, maxLength, placeh
           disabled={full}
           placeholder={full ? strings.me.itemLimit : placeholder}
           onChange={(e) => setDraft(e.target.value)}
-          className="min-h-11 min-w-0 flex-1 rounded-2xl border border-line bg-surface-2 px-4 text-base placeholder:text-muted/70 focus:border-volt focus:outline-none disabled:opacity-60"
+          className="min-h-11 min-w-0 flex-1 rounded-2xl border border-line bg-surface-2 px-4 text-base placeholder:text-muted/70 focus:border-cyan focus:outline-none disabled:opacity-60"
         />
         <button
           type="submit"
