@@ -1,22 +1,6 @@
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import {
-  forceCollide,
-  forceLink,
-  forceManyBody,
-  forceRadial,
-  forceSimulation,
-  type SimulationLinkDatum,
-  type SimulationNodeDatum,
-} from "d3-force";
+import { forceCollide, forceLink, forceManyBody, forceRadial, forceSimulation, type SimulationLinkDatum, type SimulationNodeDatum } from "d3-force";
 import { LocateFixed, Maximize2, X } from "lucide-react";
 import { strings } from "../i18n/strings";
 import { normalize } from "../lib/brainSearch";
@@ -57,10 +41,7 @@ function truncate(s: string, n: number): string {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }
 
-function buildLayout(
-  connections: ConnectionWithContact[],
-  me: { name: string; avatar: string | null },
-): Layout {
+function buildLayout(connections: ConnectionWithContact[], me: { name: string; avatar: string | null }): Layout {
   const nodes: GraphNode[] = [
     {
       id: "me",
@@ -139,8 +120,7 @@ function buildLayout(
       label: v.label,
       w: label.length * 6,
     });
-    for (const p of v.people)
-      links.push({ source: `s:${key}`, target: p, kind: "person-skill" });
+    for (const p of v.people) links.push({ source: `s:${key}`, target: p, kind: "person-skill" });
   }
 
   const sim = forceSimulation(nodes)
@@ -148,34 +128,20 @@ function buildLayout(
       "link",
       forceLink<GraphNode, GraphLink>(links)
         .id((d) => d.id)
-        .distance((l) =>
-          l.kind === "me-event"
-            ? 120
-            : l.kind === "event-person"
-              ? 62
-              : l.kind === "me-person"
-                ? 90
-                : 110,
-        )
+        .distance((l) => (l.kind === "me-event" ? 120 : l.kind === "event-person" ? 62 : l.kind === "me-person" ? 90 : 110))
         .strength((l) => (l.kind === "person-skill" ? 0.06 : 0.8)),
     )
     .force(
       "charge",
-      forceManyBody<GraphNode>().strength((d) =>
-        d.type === "event" ? -260 : d.type === "skill" ? -30 : -70,
-      ),
+      forceManyBody<GraphNode>().strength((d) => (d.type === "event" ? -260 : d.type === "skill" ? -30 : -70)),
     )
     .force(
       "collide",
-      forceCollide<GraphNode>().radius(
-        (d) => d.r + (d.type === "event" ? (d.w ?? 0) / 2 : 6),
-      ),
+      forceCollide<GraphNode>().radius((d) => d.r + (d.type === "event" ? (d.w ?? 0) / 2 : 6)),
     )
     .force(
       "radial",
-      forceRadial<GraphNode>(230, 0, 0).strength((d) =>
-        d.type === "skill" ? 0.06 : 0,
-      ),
+      forceRadial<GraphNode>(230, 0, 0).strength((d) => (d.type === "skill" ? 0.06 : 0)),
     )
     .stop();
   for (let i = 0; i < 300; i++) sim.tick();
@@ -221,10 +187,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
   const meName = profile ? profileName(profile) : t.me;
   const meAvatar = profile?.avatar_url ?? null;
 
-  const layout = useMemo(
-    () => buildLayout(connections, { name: meName, avatar: meAvatar }),
-    [connections, meName, meAvatar],
-  );
+  const layout = useMemo(() => buildLayout(connections, { name: meName, avatar: meAvatar }), [connections, meName, meAvatar]);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -253,10 +216,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
     raf.current = requestAnimationFrame(() => {
       raf.current = 0;
       const { x, y, k } = view.current;
-      gRef.current?.setAttribute(
-        "transform",
-        `translate(${x} ${y}) scale(${k})`,
-      );
+      gRef.current?.setAttribute("transform", `translate(${x} ${y}) scale(${k})`);
       syncNames();
     });
   }, [syncNames]);
@@ -274,13 +234,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
       minY = Math.min(minY, (n.y ?? 0) - n.r - 6);
       maxY = Math.max(maxY, (n.y ?? 0) + n.r + 6);
     }
-    const k = Math.min(
-      MAX_ZOOM,
-      Math.max(
-        MIN_ZOOM,
-        Math.min(size.w / (maxX - minX), size.h / (maxY - minY)) * 0.92,
-      ),
-    );
+    const k = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.min(size.w / (maxX - minX), size.h / (maxY - minY)) * 0.92));
     fitK.current = k;
     view.current = {
       k,
@@ -304,10 +258,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
     fit();
     if (gRef.current) {
       const { x, y, k } = view.current;
-      gRef.current.setAttribute(
-        "transform",
-        `translate(${x} ${y}) scale(${k})`,
-      );
+      gRef.current.setAttribute("transform", `translate(${x} ${y}) scale(${k})`);
     }
   }, [fit]);
 
@@ -377,11 +328,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const r = svg.getBoundingClientRect();
-      zoomAt(
-        e.clientX - r.left,
-        e.clientY - r.top,
-        Math.exp(-e.deltaY * 0.0015),
-      );
+      zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.0015));
     };
     svg.addEventListener("wheel", onWheel, { passive: false });
     return () => svg.removeEventListener("wheel", onWheel);
@@ -412,16 +359,8 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
     const next = { x: e.clientX, y: e.clientY };
     const rect = e.currentTarget.getBoundingClientRect();
     if (pointers.current.size === 1) {
-      if (
-        !gesture.current.moved &&
-        Math.hypot(
-          next.x - gesture.current.startX,
-          next.y - gesture.current.startY,
-        ) < 5
-      )
-        return;
-      if (!gesture.current.moved)
-        e.currentTarget.setPointerCapture(e.pointerId);
+      if (!gesture.current.moved && Math.hypot(next.x - gesture.current.startX, next.y - gesture.current.startY) < 5) return;
+      if (!gesture.current.moved) e.currentTarget.setPointerCapture(e.pointerId);
       gesture.current.moved = true;
       view.current = {
         ...view.current,
@@ -433,12 +372,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
       pointers.current.set(e.pointerId, next);
       const [a, b] = [...pointers.current.values()];
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
-      if (gesture.current.dist > 0 && dist > 0)
-        zoomAt(
-          (a.x + b.x) / 2 - rect.left,
-          (a.y + b.y) / 2 - rect.top,
-          dist / gesture.current.dist,
-        );
+      if (gesture.current.dist > 0 && dist > 0) zoomAt((a.x + b.x) / 2 - rect.left, (a.y + b.y) / 2 - rect.top, dist / gesture.current.dist);
       gesture.current.dist = dist;
       return;
     }
@@ -447,8 +381,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
 
   const onPointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
     pointers.current.delete(e.pointerId);
-    if (e.currentTarget.hasPointerCapture(e.pointerId))
-      e.currentTarget.releasePointerCapture(e.pointerId);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
     if (pointers.current.size === 1) {
       const [p] = [...pointers.current.values()];
       gesture.current.startX = p.x;
@@ -459,8 +392,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
   const tapNode = (n: GraphNode) => {
     if (gesture.current.moved) return;
     if (n.type === "person") navigate(`/connections/${n.id.slice(2)}`);
-    else if (n.type === "event" || n.type === "skill")
-      setFocus((f) => (f === n.id ? null : n.id));
+    else if (n.type === "event" || n.type === "skill") setFocus((f) => (f === n.id ? null : n.id));
   };
 
   const focusNode = focus ? layout.nodes.find((n) => n.id === focus) : null;
@@ -470,21 +402,11 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
     for (const id of highlightIds) s.add(`p:${id}`);
     return s;
   }, [highlightIds]);
-  const active = focusNode
-    ? (layout.neighbors.get(focusNode.id) ?? new Set([focusNode.id]))
-    : searchSet;
+  const active = focusNode ? (layout.neighbors.get(focusNode.id) ?? new Set([focusNode.id])) : searchSet;
   const dim = (id: string) => (active && !active.has(id) ? 0.15 : 1);
 
-  const focusPeople = focusNode
-    ? [...(layout.neighbors.get(focusNode.id) ?? [])].filter((id) =>
-        id.startsWith("p:"),
-      ).length
-    : 0;
-  const chip = focusNode
-    ? t.showing(focusNode.label, focusPeople)
-    : searchSet
-      ? t.showingMatches(searchSet.size - 1)
-      : null;
+  const focusPeople = focusNode ? [...(layout.neighbors.get(focusNode.id) ?? [])].filter((id) => id.startsWith("p:")).length : 0;
+  const chip = focusNode ? t.showing(focusNode.label, focusPeople) : searchSet ? t.showingMatches(searchSet.size - 1) : null;
 
   return (
     <div className="h-[60vh] min-h-80">
@@ -517,8 +439,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
             <g style={{ stroke: "var(--color-muted)" }} fill="none">
               {layout.links.map((l, i) => {
                 const faint = l.kind === "person-skill";
-                const on =
-                  !active || (active.has(l.a.id) && active.has(l.b.id));
+                const on = !active || (active.has(l.a.id) && active.has(l.b.id));
                 return (
                   <line
                     key={i}
@@ -557,9 +478,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
                       height={n.r * 2}
                       rx={n.r}
                       style={{
-                        fill: on
-                          ? "var(--color-cyan)"
-                          : "var(--color-surface-2)",
+                        fill: on ? "var(--color-cyan)" : "var(--color-surface-2)",
                         stroke: on ? "var(--color-cyan)" : "var(--color-lilac)",
                       }}
                       strokeWidth={1.5}
@@ -595,13 +514,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
                         fill: on ? "var(--color-cyan)" : "var(--color-lilac)",
                       }}
                     />
-                    <text
-                      y={-10}
-                      textAnchor="middle"
-                      fontSize={10}
-                      className="font-mono"
-                      style={{ fill: "var(--color-muted)" }}
-                    >
+                    <text y={-10} textAnchor="middle" fontSize={10} className="font-mono" style={{ fill: "var(--color-muted)" }}>
                       {truncate(n.label, 14)}
                     </text>
                   </g>
@@ -621,10 +534,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
                     r={n.r + 2}
                     style={{
                       fill: "var(--color-surface-2)",
-                      stroke:
-                        isMe || n.verified
-                          ? "var(--color-cyan)"
-                          : "var(--color-line)",
+                      stroke: isMe || n.verified ? "var(--color-cyan)" : "var(--color-line)",
                     }}
                     strokeWidth={2}
                   />
@@ -676,23 +586,11 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
         </svg>
 
         <div className="absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] flex gap-2">
-          <button
-            type="button"
-            onClick={fit}
-            aria-label={t.fit}
-            title={t.fit}
-            className={btnClass}
-          >
+          <button type="button" onClick={fit} aria-label={t.fit} title={t.fit} className={btnClass}>
             <LocateFixed size={18} aria-hidden />
           </button>
           {!full && (
-            <button
-              type="button"
-              onClick={() => setFull(true)}
-              aria-label={t.fullscreen}
-              title={t.fullscreen}
-              className={btnClass}
-            >
+            <button type="button" onClick={() => setFull(true)} aria-label={t.fullscreen} title={t.fullscreen} className={btnClass}>
               <Maximize2 size={18} aria-hidden />
             </button>
           )}
