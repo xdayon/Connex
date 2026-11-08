@@ -7,15 +7,16 @@ import { Button } from "./ui/Button";
 import { strings } from "../i18n/strings";
 import { cluster } from "../lib/config";
 import { shortAddress } from "../lib/format";
+import { recordTip } from "../lib/notifications";
 import { explorerTx } from "../lib/proofs";
 
 const AMOUNTS = [0.01, 0.05, 0.1] as const;
 
-type Props = { open: boolean; onClose: () => void; to: string; name: string };
+type Props = { open: boolean; onClose: () => void; to: string; toUser: string; name: string };
 
 // Gorjeta em SOL direto de carteira para carteira. O conneX não toca no dinheiro:
 // monta a transferência, a carteira de quem envia assina e transmite.
-export function TipSheet({ open, onClose, to, name }: Props) {
+export function TipSheet({ open, onClose, to, toUser, name }: Props) {
   const t = strings.tip;
   const { connection } = useConnection();
   const { publicKey, connected, connect, wallet, sendTransaction } = useWallet();
@@ -54,6 +55,7 @@ export function TipSheet({ open, onClose, to, name }: Props) {
       );
       const signature = await sendTransaction(tx, connection);
       await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
+      void recordTip(signature, toUser);
       setSig(signature);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";

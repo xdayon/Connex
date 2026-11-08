@@ -5,7 +5,9 @@ import { strings } from "../i18n/strings";
 import { useCurrentEventId } from "../lib/currentEvent";
 import { supabase } from "../lib/supabase";
 import { useAsync } from "../lib/useAsync";
+import { useAuth } from "../providers/AuthProvider";
 import { PageLoader, Wordmark } from "./Logo";
+import { NotificationsBell } from "./NotificationsBell";
 
 const tabs: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
   { to: "/", label: strings.nav.home, icon: QrCode, end: true },
@@ -37,11 +39,15 @@ function EventChip() {
 
 export function AppShell() {
   const { pathname } = useLocation();
+  const { user } = useAuth();
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-120 flex-col">
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-ink/85 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur">
         <Wordmark />
-        <EventChip />
+        <div className="flex min-w-0 items-center gap-2">
+          <EventChip />
+          {user && <NotificationsBell />}
+        </div>
       </header>
       <main className="flex-1 px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4">
         <Suspense fallback={<PageLoader />}>

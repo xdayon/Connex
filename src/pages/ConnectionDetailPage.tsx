@@ -275,6 +275,7 @@ export function ConnectionDetailPage() {
                 open={tipOpen}
                 onClose={() => setTipOpen(false)}
                 to={data.shared_wallet}
+                toUser={data.contact_id}
                 name={profileName(contact)}
               />
             </div>

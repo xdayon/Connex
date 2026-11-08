@@ -265,6 +265,17 @@ export const strings = {
     cancelled: "Cancelled in the wallet.",
     failed: "Couldn't confirm the tip. Check your wallet's history before trying again.",
   },
+  notifications: {
+    title: "Notifications",
+    bell: "Notifications",
+    bellUnread: (n: number) => `${n} new notifications`,
+    empty: "Nothing new yet. When someone connects with you, signs a seal or sends a tip, it shows up here.",
+    connected: (name: string) => `${name} connected with you`,
+    connectedUnverified: (name: string) => `${name} saved your profile`,
+    sealSigned: (name: string) => `${name} signed your meeting seal. Sign your half.`,
+    sealed: (name: string) => `Your meeting with ${name} is sealed on Solana.`,
+    tip: (name: string, sol: string) => `${name} sent you ${sol} SOL`,
+  },
   seal: {
     sealedBadge: "Sealed on Solana",
     title: "Seal this meeting on Solana",
