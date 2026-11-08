@@ -32,10 +32,13 @@ export function NotificationsBell() {
   const t = strings.notifications;
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { items, unread, markSeen } = useNotifications(user?.id);
+  const { items, unread, seen, markSeen } = useNotifications(user?.id);
   const [open, setOpen] = useState(false);
+  // "Visto até" de antes de abrir: as mais novas que isso ganham o ponto de nova na lista.
+  const [seenAtOpen, setSeenAtOpen] = useState(0);
 
   const openSheet = () => {
+    setSeenAtOpen(seen);
     setOpen(true);
     markSeen();
   };
@@ -64,6 +67,7 @@ export function NotificationsBell() {
           <ul className="flex flex-col">
             {items.map((n) => {
               const name = n.actor_name || (n.actor_handle ? `@${n.actor_handle}` : "?");
+              const fresh = new Date(n.at).getTime() > seenAtOpen;
               return (
                 <li key={`${n.kind}:${n.actor_id}:${n.at}`}>
                   <button
@@ -76,6 +80,7 @@ export function NotificationsBell() {
                       <span className="block text-sm text-text">{describe(n, name)}</span>
                       <span className="block text-xs text-muted">{relativeDate(n.at)}</span>
                     </span>
+                    {fresh && <span aria-label={t.fresh} className="size-2.5 shrink-0 rounded-full bg-cyan" />}
                   </button>
                 </li>
               );

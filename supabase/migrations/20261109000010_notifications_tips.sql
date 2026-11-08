@@ -4,7 +4,7 @@
 
 create table public.tips (
   id uuid primary key default gen_random_uuid(),
-  cluster text check (cluster in ('devnet', 'mainnet')),
+  cluster text not null check (cluster in ('devnet', 'mainnet')),
   from_user uuid not null references public.profiles (id) on delete cascade,
   to_user uuid not null references public.profiles (id) on delete cascade,
   from_wallet text not null check (private.is_solana_address(from_wallet)),

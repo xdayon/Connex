@@ -64,5 +64,5 @@ export function useNotifications(userId: string | undefined) {
     }
   }, [items, key]);
 
-  return { items, unread, markSeen };
+  return { items, unread, seen, markSeen };
 }

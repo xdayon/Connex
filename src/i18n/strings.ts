@@ -269,6 +269,7 @@ export const strings = {
     title: "Notifications",
     bell: "Notifications",
     bellUnread: (n: number) => `${n} new notifications`,
+    fresh: "New",
     empty: "Nothing new yet. When someone connects with you, signs a seal or sends a tip, it shows up here.",
     connected: (name: string) => `${name} connected with you`,
     connectedUnverified: (name: string) => `${name} saved your profile`,
