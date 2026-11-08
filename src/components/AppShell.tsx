@@ -29,7 +29,7 @@ function EventChip() {
     <Link
       to="/events"
       aria-label={`${strings.header.event}: ${data.name}`}
-      className="inline-flex h-9 max-w-[55%] items-center gap-2 rounded-full border border-line bg-surface px-3 text-sm text-text"
+      className="inline-flex h-9 min-w-0 max-w-full items-center gap-2 rounded-full border border-line bg-surface px-3 text-sm text-text"
     >
       <span className="size-2 shrink-0 rounded-full bg-cyan" aria-hidden />
       <span className="truncate">{data.name}</span>
@@ -44,7 +44,7 @@ export function AppShell() {
     <div className="mx-auto flex min-h-dvh w-full max-w-120 flex-col">
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-ink/85 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur">
         <Wordmark />
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
           <EventChip />
           {user && <NotificationsBell />}
         </div>

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
-import { CalendarX, Check, ChevronDown, Copy, ExternalLink, List, MapPin, Network, QrCode, Share2, Users } from "lucide-react";
+import { CalendarX, Check, ChevronDown, Copy, ExternalLink, List, MapPin, Network, Pencil, QrCode, Share2, ShieldCheck, Users } from "lucide-react";
 import { EventBrain } from "../components/event/EventBrain";
+import { EventEditSheet } from "../components/event/EventEditSheet";
 import { PersonSheet } from "../components/event/PersonSheet";
 import { PresenceProofSheet } from "../components/PresenceProofSheet";
 import { PresenceQrSheet } from "../components/PresenceQrSheet";
@@ -47,6 +48,7 @@ export function EventDetailPage() {
   const [filter, setFilter] = useState<Filter | null>(null);
   // Quem está aqui: em lista ou no Brain do evento.
   const [peopleView, setPeopleView] = useState<"list" | "graph">("list");
+  const [editOpen, setEditOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState<boolean | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
   const [params, setParams] = useSearchParams();
@@ -201,12 +203,28 @@ export function EventDetailPage() {
             </a>
           </p>
         )}
-        {proofsOn && event.created_by === user?.id && (
-          <Button variant="secondary" className="mt-3" icon={<QrCode size={16} aria-hidden />} onClick={() => setQrOpen(true)}>
-            {t2.button}
-          </Button>
-        )}
       </div>
+
+      {/* Painel de quem organiza: editar o evento e mostrar o QR de presença na entrada. */}
+      {event.created_by === user?.id && (
+        <Card className="flex flex-col gap-3 border-lilac/30 p-4">
+          <p className="flex items-center gap-2 text-sm font-semibold text-lilac">
+            <ShieldCheck size={16} aria-hidden />
+            {t.organizerTitle}
+          </p>
+          <div className={`grid gap-2 ${proofsOn ? "grid-cols-2" : "grid-cols-1"}`}>
+            <Button variant="secondary" full icon={<Pencil size={16} aria-hidden />} onClick={() => setEditOpen(true)}>
+              {t.editEvent}
+            </Button>
+            {proofsOn && (
+              <Button variant="secondary" full icon={<QrCode size={16} aria-hidden />} onClick={() => setQrOpen(true)}>
+                {t2.button}
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-muted">{t.organizerPanelHint}</p>
+        </Card>
+      )}
 
       {!attendee ? (
         <Button size="lg" full loading={checkingIn} onClick={checkIn}>
@@ -338,6 +356,7 @@ export function EventDetailPage() {
         </>
       )}
 
+      {event.created_by === user?.id && <EventEditSheet event={event} open={editOpen} onClose={() => setEditOpen(false)} onSaved={reload} />}
       {proofsOn && event.created_by === user?.id && (
         <PresenceQrSheet open={qrOpen} onClose={() => setQrOpen(false)} eventId={event.id} joinCode={event.join_code} />
       )}

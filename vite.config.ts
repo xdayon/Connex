@@ -32,7 +32,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallbackDenylist: [/^\/api\//],
+        // Arquivos de verdade (imagens de /press, .well-known, qualquer coisa com extensão) não caem no app.
+        navigateFallbackDenylist: [/^\/api\//, /^\/press\//, /^\/\.well-known\//, /\/[^/?]+\.[a-z0-9]+$/i],
         // A new version must take over without waiting for every tab to close:
         // the Android WebView shell is rarely closed, so a waiting worker would never activate.
         skipWaiting: true,
