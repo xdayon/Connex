@@ -1,10 +1,10 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { BrandIcon } from "./BrandIcon";
-import { TextField } from "./ui/TextField";
 import { Switch } from "./ui/Switch";
 import { strings } from "../i18n/strings";
 import { shortAddress } from "../lib/format";
+import { LINK_PREFIX } from "../lib/links";
 import { LINK_KEYS, type LinkKey, type ShareKey } from "../lib/types";
 
 const PRIMARY_COUNT = 6;
@@ -21,75 +21,94 @@ type Props = {
   wallet?: string | null;
 };
 
-export function LinkFields({
-  values,
-  errors,
-  onChange,
-  hidden,
-  onHiddenChange,
-  wallet,
-}: Props) {
+const URL_KEYS: LinkKey[] = ["website", "calendar"];
+
+function Row({ icon, children, toggle }: { icon: ReactNode; children: ReactNode; toggle?: ReactNode }) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className="flex h-11 w-6 shrink-0 items-center justify-center text-text">{icon}</span>
+      <div className="min-w-0 flex-1">{children}</div>
+      {toggle}
+    </div>
+  );
+}
+
+export function LinkFields({ values, errors, onChange, hidden, onHiddenChange, wallet }: Props) {
   const primary = LINK_KEYS.slice(0, PRIMARY_COUNT);
   const more = LINK_KEYS.slice(PRIMARY_COUNT);
-  const [open, setOpen] = useState(() =>
-    more.some((k) => values[k].trim() !== ""),
-  );
+  const filledMore = more.filter((k) => values[k].trim() !== "").length;
+  const [open, setOpen] = useState(false);
 
   const setShared = (k: ShareKey, on: boolean) => {
     const rest = hidden.filter((h) => h !== k);
     onHiddenChange(on ? rest : [...rest, k]);
   };
 
-  const label = (k: LinkKey) => (
-    <span className="inline-flex items-center gap-2">
-      <BrandIcon k={k} size={16} />
-      {strings.me.linkLabels[k]}
-    </span>
+  const toggleFor = (k: ShareKey) => (
+    <Switch compact checked={!hidden.includes(k)} onChange={(v) => setShared(k, v)} label={strings.me.shareDefaultSwitch(strings.me.linkLabels[k])} />
   );
 
-  const input = (k: LinkKey) =>
-    k === "whatsapp" ? (
-      <Suspense
-        fallback={
-          <div className="h-20 animate-pulse rounded-2xl bg-surface-2" />
-        }
-      >
-        <WhatsAppField
-          label={label(k)}
-          value={values[k]}
-          error={errors[k]}
-          onChange={(v) => onChange(k, v)}
-        />
-      </Suspense>
-    ) : (
-      <TextField
-        label={label(k)}
-        value={values[k]}
-        maxLength={300}
-        placeholder={strings.me.linkPlaceholders[k]}
-        autoCapitalize="none"
-        autoCorrect="off"
-        spellCheck={false}
-        error={errors[k]}
-        onChange={(e) => onChange(k, e.target.value)}
-      />
+  const field = (k: LinkKey) => {
+    const hasValue = values[k].trim() !== "";
+    const error = errors[k];
+    const label = strings.me.linkLabels[k];
+    const prefix = LINK_PREFIX[k];
+
+    if (k === "whatsapp") {
+      return (
+        <Row key={k} icon={<BrandIcon k={k} size={20} />} toggle={hasValue ? toggleFor(k) : undefined}>
+          <Suspense fallback={<div className="h-12 animate-pulse rounded-2xl bg-surface-2" />}>
+            <WhatsAppField label={<span className="sr-only">{label}</span>} value={values[k]} error={error} onChange={(v) => onChange(k, v)} />
+          </Suspense>
+        </Row>
+      );
+    }
+
+    const errId = `link-${k}-err`;
+    return (
+      <Row key={k} icon={<BrandIcon k={k} size={20} />} toggle={hasValue ? toggleFor(k) : undefined}>
+        <div
+          className={`flex min-h-12 items-center rounded-2xl border bg-surface-2 px-3 transition focus-within:border-cyan ${error ? "border-danger" : "border-line"}`}
+        >
+          {prefix && (
+            <span className="mr-0.5 select-none font-mono text-base text-muted" aria-hidden>
+              {prefix}
+            </span>
+          )}
+          <input
+            value={values[k]}
+            maxLength={300}
+            aria-label={label}
+            aria-invalid={!!error}
+            aria-describedby={error ? errId : undefined}
+            placeholder={strings.me.linkPlaceholders[k]}
+            inputMode={URL_KEYS.includes(k) ? "url" : "text"}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            onChange={(e) => onChange(k, e.target.value)}
+            className="min-w-0 flex-1 bg-transparent py-2 text-base text-text placeholder:text-muted/70 focus:outline-none"
+          />
+        </div>
+        {error && (
+          <p id={errId} className="mt-1 text-xs text-danger">
+            {error}
+          </p>
+        )}
+      </Row>
     );
-
-  const field = (k: LinkKey) => (
-    <div key={k} className="flex flex-col">
-      {input(k)}
-      {values[k].trim() !== "" && (
-        <Switch
-          checked={!hidden.includes(k)}
-          onChange={(v) => setShared(k, v)}
-          label={strings.me.shareDefaultSwitch(strings.me.linkLabels[k])}
-        />
-      )}
-    </div>
-  );
+  };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2">
+      {wallet && (
+        <Row icon={<BrandIcon k="wallet" size={20} />} toggle={toggleFor("wallet")}>
+          <div className="flex min-h-11 items-center gap-2">
+            <span className="text-sm font-medium">{strings.me.linkLabels.wallet}</span>
+            <span className="font-mono text-sm text-muted">{shortAddress(wallet)}</span>
+          </div>
+        </Row>
+      )}
       {primary.map(field)}
       <button
         type="button"
@@ -97,27 +116,10 @@ export function LinkFields({
         onClick={() => setOpen((o) => !o)}
         className="inline-flex min-h-11 items-center gap-2 self-start text-sm font-medium text-muted hover:text-text"
       >
-        <ChevronDown
-          size={16}
-          className={`transition ${open ? "rotate-180" : ""}`}
-          aria-hidden
-        />
-        {strings.me.moreNetworks}
+        <ChevronDown size={16} className={`transition ${open ? "rotate-180" : ""}`} aria-hidden />
+        {filledMore > 0 ? strings.me.moreNetworksAdded(filledMore) : strings.me.moreNetworks}
       </button>
       {open && more.map(field)}
-      {wallet && (
-        <div className="flex items-center gap-3 border-t border-line pt-3">
-          <BrandIcon k="wallet" size={20} />
-          <div className="min-w-0 flex-1">
-            <Switch
-              checked={!hidden.includes("wallet")}
-              onChange={(v) => setShared("wallet", v)}
-              label={strings.me.linkLabels.wallet}
-              hint={shortAddress(wallet)}
-            />
-          </div>
-        </div>
-      )}
       <p className="text-xs text-muted">{strings.me.shareDefaultHint}</p>
     </div>
   );

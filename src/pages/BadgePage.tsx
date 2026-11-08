@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronRight, Copy, Share2, WifiOff } from "lucide-react";
 import { Link } from "react-router";
+import { BirthdayToday } from "../components/BirthdayToday";
 import { ConnectedSheet } from "../components/ConnectedSheet";
 import { QRCode } from "../components/QRCode";
 import { ShareSelector } from "../components/ShareSelector";
@@ -248,6 +249,8 @@ export function BadgePage() {
           {strings.badge.copyLink}
         </Button>
       </div>
+
+      <BirthdayToday />
 
       {(!hasLinks || !hasSkills) && (
         <Link to={`/welcome?step=${hasLinks ? 3 : 2}`} className="block w-full">

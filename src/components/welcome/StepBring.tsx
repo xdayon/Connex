@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ChipEditor } from "../ChipEditor";
 import { Button } from "../ui/Button";
-import { Chip } from "../ui/Chip";
 import { useToast } from "../ui/Toast";
 import { strings } from "../../i18n/strings";
 import { friendlyError } from "../../lib/errors";
@@ -9,35 +8,6 @@ import { supabase } from "../../lib/supabase";
 import type { Profile } from "../../lib/types";
 
 type Props = { profile: Profile; onDone: () => void | Promise<void> };
-
-type EditorProps = {
-  label: string;
-  placeholder: string;
-  items: string[];
-  onChange: (items: string[]) => void;
-  suggestions: readonly string[];
-  maxItems: number;
-  maxLength: number;
-};
-
-function SuggestedEditor({ label, placeholder, items, onChange, suggestions, maxItems, maxLength }: EditorProps) {
-  const left = suggestions.filter((s) => !items.some((i) => i.toLowerCase() === s.toLowerCase()));
-  const full = items.length >= maxItems;
-  return (
-    <div className="flex flex-col gap-3">
-      <ChipEditor label={label} items={items} onChange={onChange} maxItems={maxItems} maxLength={maxLength} placeholder={placeholder} />
-      {!full && left.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {left.map((s) => (
-            <Chip key={s} onClick={() => onChange([...items, s])}>
-              + {s}
-            </Chip>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function StepBring({ profile, onDone }: Props) {
   const toast = useToast();
@@ -61,7 +31,7 @@ export function StepBring({ profile, onDone }: Props) {
 
   return (
     <div className="mt-6 flex flex-col gap-6">
-      <SuggestedEditor
+      <ChipEditor
         label={t.skills}
         placeholder={t.skillsPlaceholder}
         items={skills}
@@ -70,7 +40,7 @@ export function StepBring({ profile, onDone }: Props) {
         maxItems={30}
         maxLength={40}
       />
-      <SuggestedEditor
+      <ChipEditor
         label={t.lookingFor}
         placeholder={t.lookingForPlaceholder}
         items={lookingFor}
@@ -79,7 +49,7 @@ export function StepBring({ profile, onDone }: Props) {
         maxItems={10}
         maxLength={60}
       />
-      <SuggestedEditor
+      <ChipEditor
         label={t.offering}
         placeholder={t.offeringPlaceholder}
         items={offering}

@@ -4,15 +4,9 @@ import { Button } from "../ui/Button";
 import { useToast } from "../ui/Toast";
 import { strings } from "../../i18n/strings";
 import { friendlyError } from "../../lib/errors";
-import { normalizeLink } from "../../lib/links";
+import { linkValuesFrom, normalizeAll, type LinkValues } from "../../lib/linkForm";
 import { supabase } from "../../lib/supabase";
-import {
-  LINK_KEYS,
-  type LinkKey,
-  type Links,
-  type Profile,
-  type ShareKey,
-} from "../../lib/types";
+import type { LinkKey, Profile, ShareKey } from "../../lib/types";
 
 type Props = {
   profile: Profile;
@@ -21,24 +15,13 @@ type Props = {
 
 export function StepLinks({ profile, onDone }: Props) {
   const toast = useToast();
-  const [values, setValues] = useState<Record<LinkKey, string>>(
-    () =>
-      Object.fromEntries(
-        LINK_KEYS.map((k) => [k, profile.links?.[k] ?? ""]),
-      ) as Record<LinkKey, string>,
-  );
+  const [values, setValues] = useState<LinkValues>(() => linkValuesFrom(profile.links));
   const [hidden, setHidden] = useState<ShareKey[]>(profile.share_hidden ?? []);
   const [errors, setErrors] = useState<Partial<Record<LinkKey, string>>>({});
   const [busy, setBusy] = useState(false);
 
   const save = async () => {
-    const errs: typeof errors = {};
-    const out: Links = {};
-    for (const k of LINK_KEYS) {
-      const r = normalizeLink(k, values[k]);
-      if (!r.ok) errs[k] = strings.me.linkInvalid;
-      else if (r.value) out[k] = r.value;
-    }
+    const { out, errors: errs } = normalizeAll(values);
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setBusy(true);
