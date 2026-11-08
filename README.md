@@ -46,12 +46,12 @@ sequenceDiagram
     participant W as conneX Worker
     participant S as Solana
     App->>W: prepare (meeting with B)
-    W-->>App: "conneX meet v2 <code>"
+    W-->>App: 'conneX meet v2 {code}'
     App->>A: signMessage (free, no funds move)
     A-->>App: Ed25519 signature
     App->>W: submit signature
     W->>W: verify signature against your wallet
-    W->>S: tx = [Ed25519 verify(your key, message, signature), Memo "conneX meet v2 <code> <wallet>"]<br/>fee paid by the conneX wallet
+    W->>S: tx = [Ed25519 verify(your key, message, signature), Memo 'conneX meet v2 {code} {wallet}']<br/>fee paid by the conneX wallet
     S-->>W: confirmed (the network itself re-checks the signature)
     W-->>App: sealed half ✓ (B sees it live)
 ```
