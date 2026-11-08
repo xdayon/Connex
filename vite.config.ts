@@ -16,8 +16,8 @@ export default defineConfig({
       injectRegister: false,
       includeAssets: ["favicon.ico", "apple-touch-icon-180x180.png", "logo.svg"],
       manifest: {
-        name: "Connex",
-        short_name: "Connex",
+        name: "conneX",
+        short_name: "conneX",
         description: "Your smart badge for IRL connections.",
         theme_color: "#0A0D16",
         background_color: "#0A0D16",

@@ -7,7 +7,7 @@ export function PlainLayout() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-120 flex-col">
       <header className="px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
-        <Link to="/" aria-label="Connex">
+        <Link to="/" aria-label="conneX">
           <Wordmark />
         </Link>
       </header>

@@ -35,9 +35,9 @@ export function PublicProfilePage() {
   }, [handle, session?.user.id]);
 
   useEffect(() => {
-    document.title = data ? `${data.display_name || data.handle} (@${data.handle}) · Connex` : "Connex";
+    document.title = data ? `${data.display_name || data.handle} (@${data.handle}) · conneX` : "conneX";
     return () => {
-      document.title = "Connex";
+      document.title = "conneX";
     };
   }, [data]);
 

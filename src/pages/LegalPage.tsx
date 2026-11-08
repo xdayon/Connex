@@ -5,9 +5,9 @@ export function LegalPage({ kind }: { kind: "terms" | "privacy" }) {
   const t = strings.legal;
   const sections = kind === "terms" ? t.termsSections : t.privacySections;
   useEffect(() => {
-    document.title = `${t[kind]} · Connex`;
+    document.title = `${t[kind]} · conneX`;
     return () => {
-      document.title = "Connex";
+      document.title = "conneX";
     };
   }, [kind, t]);
   return (

@@ -11,7 +11,7 @@ import { rpcEndpoint, walletChain } from "../lib/config";
 if (typeof window !== "undefined") {
   registerMwa({
     appIdentity: {
-      name: "Connex",
+      name: "conneX",
       uri: window.location.origin,
       icon: "/pwa-192x192.png",
     },

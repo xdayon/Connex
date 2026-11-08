@@ -29,7 +29,7 @@ const social: Partial<Record<LinkKey, string>> = {
 };
 
 export function buildVCard(p: ContactProfile, links: Links, origin = window.location.origin): string {
-  const name = p.display_name?.trim() || p.handle || "Connex contact";
+  const name = p.display_name?.trim() || p.handle || "conneX contact";
   const lines = ["BEGIN:VCARD", "VERSION:3.0", `FN:${esc(name)}`, `N:;${esc(name)};;;`];
   if (p.handle) lines.push(`NICKNAME:${esc(p.handle)}`);
   if (p.headline) lines.push(`TITLE:${esc(p.headline)}`);

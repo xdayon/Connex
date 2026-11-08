@@ -100,5 +100,5 @@ export type ConnectionWithContact = Connection & {
 export const CONNECTION_SELECT = `*, shared_links, shared_wallet, contact:profiles!connections_contact_id_fkey(${PROFILE_COLS}), event:events(id,name)`;
 
 export function profileName(p: Pick<Profile, "display_name" | "handle"> | null | undefined): string {
-  return p?.display_name?.trim() || (p?.handle ? `@${p.handle}` : "Connex user");
+  return p?.display_name?.trim() || (p?.handle ? `@${p.handle}` : "conneX user");
 }

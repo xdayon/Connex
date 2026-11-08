@@ -258,7 +258,7 @@ export function ScanPage() {
           title={cam === "denied" ? t.deniedTitle : cam === "nocamera" ? t.noCameraTitle : t.errorTitle}
           hint={
             <>
-              {cam === "denied" ? t.deniedBody : cam === "nocamera" ? t.noCameraBody : window.isSecureContext ? t.noCameraBody : t.cameraBlockedInsecure}
+              {cam === "denied" ? (/iPhone|iPad|iPod/.test(navigator.userAgent) ? t.deniedBodyIOS : t.deniedBody) : cam === "nocamera" ? t.noCameraBody : window.isSecureContext ? t.noCameraBody : t.cameraBlockedInsecure}
               {camCode && <span className="mt-2 block font-mono text-[11px] opacity-70">{camCode}</span>}
             </>
           }

@@ -23,12 +23,24 @@ export function Logo({ size = 32, withBackground = false, className }: LogoProps
   );
 }
 
-export function Wordmark({ size = 28 }: { size?: number }) {
+export function Wordmark({
+  size = 28,
+  textClassName = "text-[22px]",
+  showLogo = true,
+}: {
+  size?: number;
+  textClassName?: string;
+  showLogo?: boolean;
+}) {
   return (
     <span className="inline-flex items-center gap-2">
-      <Logo size={size} />
-      <span className="font-mono text-lg font-semibold tracking-[-0.04em] text-text">
-        conne<span className="text-cyan [text-shadow:0_0_10px_color-mix(in_srgb,var(--color-cyan)_70%,transparent)]">x</span>
+      {showLogo && <Logo size={size} />}
+      {/* Geist com o X maior e centralizado na altura das minúsculas (text-box corta as sobras da fonte). */}
+      <span className={`inline-flex items-center font-sans font-semibold leading-none tracking-[-0.03em] text-text ${textClassName}`}>
+        <span className="[text-box:trim-both_ex_alphabetic]">conne</span>
+        <span className="ml-[0.01em] inline-block text-[1.35em] leading-none text-cyan [text-box:trim-both_cap_alphabetic] [text-shadow:0_0_0.22em_color-mix(in_srgb,var(--color-cyan)_75%,transparent)]">
+          X
+        </span>
       </span>
     </span>
   );
