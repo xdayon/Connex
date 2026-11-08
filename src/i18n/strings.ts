@@ -82,7 +82,7 @@ export const strings = {
     features: [
       { title: "Meet", body: "Scan a live QR badge. The connection is saved with the event, the time and proof you met in person." },
       { title: "Remember", body: "Add private notes and tags while it's fresh: what they build, what they need, what you promised." },
-      { title: "Ask", body: "Search like you think: \"designers I met this week\" or \"who builds DePIN from the hacker house\"." },
+      { title: "Ask", body: "Search like you think: \"designers I met this week\" or \"investors I met at the hacker house\"." },
       { title: "See", body: "Your network as a graph of people, events and skills, so you spot who connects to whom." },
     ],
     howTitle: "How it works",
