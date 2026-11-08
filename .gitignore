@@ -18,3 +18,6 @@ dist-ssr
 .wrangler/
 *.keystore
 *.jks
+
+# Cópias de trabalho temporárias dos agentes
+.claude/worktrees/

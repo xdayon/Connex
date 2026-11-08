@@ -54,9 +54,11 @@ h3,
   letter-spacing: -0.025em;
 }
 
+/* Fora das camadas do Tailwind, esta regra vence as classes. Botões ficam de fora: o preflight
+   já herda a fonte, e assim text-sm/font-semibold valem. Campos seguem herdando 16px (no iPhone,
+   campo com menos de 16px faz a tela dar zoom ao tocar). */
 input,
 textarea,
-button,
 select {
   font: inherit;
 }

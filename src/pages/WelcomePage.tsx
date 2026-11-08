@@ -64,7 +64,7 @@ function StepWho({ profile, refreshProfile }: { profile: Profile; refreshProfile
 
   return (
     <form onSubmit={submit} className="mt-6 flex flex-col gap-5" noValidate>
-      <AvatarUpload uid={profile.id} name={name || "?"} src={avatar} label={avatar ? t.changePhoto : t.addPhoto} onUploaded={setAvatar} />
+      <AvatarUpload uid={profile.id} name={name || "?"} src={avatar} label={avatar ? t.changePhoto : t.addPhoto} onUploaded={setAvatar} onRemove={() => setAvatar(null)} />
       <TextField
         label={t.displayName}
         value={name}

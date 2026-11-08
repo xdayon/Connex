@@ -24,12 +24,22 @@ import { useAuth } from "../providers/AuthProvider";
 const t = strings.me;
 const w = strings.welcomeSteps;
 const LINKS_OPEN_KEY = "connex.profile.links";
+const BRING_OPEN_KEY = "connex.profile.bring";
 
-function readLinksOpen(): boolean {
+// Cartões recolhíveis do perfil: começam abertos e lembram a escolha da pessoa neste aparelho.
+function readOpen(key: string): boolean {
   try {
-    return localStorage.getItem(LINKS_OPEN_KEY) !== "closed";
+    return localStorage.getItem(key) !== "closed";
   } catch {
     return true;
+  }
+}
+
+function saveOpen(key: string, open: boolean) {
+  try {
+    localStorage.setItem(key, open ? "open" : "closed");
+  } catch {
+    /* storage unavailable */
   }
 }
 
@@ -59,7 +69,8 @@ export function ProfilePage() {
   const [bMonth, setBMonth] = useState(profile?.birth_month?.toString() ?? "");
   const [bYear, setBYear] = useState(profile?.birth_year?.toString() ?? "");
   const [links, setLinks] = useState<LinkValues>(() => linkValuesFrom(profile?.links));
-  const [linksOpen, setLinksOpen] = useState(readLinksOpen);
+  const [linksOpen, setLinksOpen] = useState(() => readOpen(LINKS_OPEN_KEY));
+  const [bringOpen, setBringOpen] = useState(() => readOpen(BRING_OPEN_KEY));
   const [fullOpen, setFullOpen] = useState(false);
   const [hidden, setHidden] = useState<ShareKey[]>(profile?.share_hidden ?? []);
   const [skills, setSkills] = useState(profile?.skills ?? []);
@@ -84,14 +95,14 @@ export function ProfilePage() {
   if (!profile) return null;
 
   const toggleLinksOpen = () => {
-    const next = !linksOpen;
-    setLinksOpen(next);
-    try {
-      localStorage.setItem(LINKS_OPEN_KEY, next ? "open" : "closed");
-    } catch {
-      /* storage unavailable */
-    }
+    setLinksOpen(!linksOpen);
+    saveOpen(LINKS_OPEN_KEY, !linksOpen);
   };
+  const toggleBringOpen = () => {
+    setBringOpen(!bringOpen);
+    saveOpen(BRING_OPEN_KEY, !bringOpen);
+  };
+  const bringCount = skills.length + lookingFor.length + offering.length;
 
   const saved = linkValuesFrom(profile.links);
   const num = (v: string) => (v ? Number(v) : null);
@@ -177,6 +188,16 @@ export function ProfilePage() {
     toast(t.photoUpdated, "success");
   };
 
+  // Sem foto: volta para as iniciais e apaga os arquivos antigos do armazenamento.
+  const onRemoveAvatar = async () => {
+    const { error } = await supabase.from("profiles").update({ avatar_url: null }).eq("id", profile.id);
+    if (error) throw error;
+    setAvatar(null);
+    await deleteAllAvatars(profile.id).catch(() => {});
+    await refreshProfile();
+    toast(t.photoRemoved, "success");
+  };
+
   const deleteAccount = async () => {
     setDeleting(true);
     try {
@@ -222,6 +243,7 @@ export function ProfilePage() {
             src={avatar}
             label={t.changePhoto}
             onUploaded={onAvatar}
+            onRemove={onRemoveAvatar}
           />
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <input
@@ -363,37 +385,53 @@ export function ProfilePage() {
       </Card>
 
       <Card className="flex flex-col gap-5 p-5">
-        <h2 className="font-display text-lg font-semibold">{t.bringTitle}</h2>
-        <ChipEditor
-          label={t.skills}
-          items={skills}
-          onChange={setSkills}
-          maxItems={30}
-          maxLength={40}
-          placeholder={t.skillsPlaceholder}
-          suggestions={w.skillSuggestions}
-          collapsibleSuggestions
-        />
-        <ChipEditor
-          label={t.lookingFor}
-          items={lookingFor}
-          onChange={setLookingFor}
-          maxItems={10}
-          maxLength={60}
-          placeholder={t.lookingForPlaceholder}
-          suggestions={w.lookingForSuggestions}
-          collapsibleSuggestions
-        />
-        <ChipEditor
-          label={t.offering}
-          items={offering}
-          onChange={setOffering}
-          maxItems={10}
-          maxLength={60}
-          placeholder={t.offeringPlaceholder}
-          suggestions={w.offeringSuggestions}
-          collapsibleSuggestions
-        />
+        <button
+          type="button"
+          aria-expanded={bringOpen}
+          onClick={toggleBringOpen}
+          className="-my-1 flex min-h-11 w-full items-center justify-between gap-3 text-left"
+        >
+          <span className="font-display text-lg font-semibold">{t.bringTitle}</span>
+          <span className="flex items-center gap-2">
+            {/* Recolhido: quantos itens a pessoa já pôs, para não parecer vazio. */}
+            {!bringOpen && bringCount > 0 && <span className="font-mono text-xs text-muted">{t.bringCount(bringCount)}</span>}
+            <ChevronDown size={18} className={`text-muted transition ${bringOpen ? "rotate-180" : ""}`} aria-hidden />
+          </span>
+        </button>
+        {bringOpen && (
+          <>
+            <ChipEditor
+              label={t.skills}
+              items={skills}
+              onChange={setSkills}
+              maxItems={30}
+              maxLength={40}
+              placeholder={t.skillsPlaceholder}
+              suggestions={w.skillSuggestions}
+              collapsibleSuggestions
+            />
+            <ChipEditor
+              label={t.lookingFor}
+              items={lookingFor}
+              onChange={setLookingFor}
+              maxItems={10}
+              maxLength={60}
+              placeholder={t.lookingForPlaceholder}
+              suggestions={w.lookingForSuggestions}
+              collapsibleSuggestions
+            />
+            <ChipEditor
+              label={t.offering}
+              items={offering}
+              onChange={setOffering}
+              maxItems={10}
+              maxLength={60}
+              placeholder={t.offeringPlaceholder}
+              suggestions={w.offeringSuggestions}
+              collapsibleSuggestions
+            />
+          </>
+        )}
       </Card>
 
       <Card className="p-5">

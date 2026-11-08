@@ -1,4 +1,4 @@
-import { Building2, Cake, Copy, ExternalLink, MapPin } from "lucide-react";
+import { Building2, Cake, Copy, MapPin } from "lucide-react";
 import { BrandIcon } from "./BrandIcon";
 import { Chip } from "./ui/Chip";
 import { Avatar } from "./ui/Avatar";
@@ -88,7 +88,6 @@ export function LinkButtons({ links, wallet }: { links: Links; wallet?: string |
             <a href={value} target="_blank" rel="noopener noreferrer" className={linkCls}>
               <BrandIcon k={key} size={18} />
               {strings.me.linkLabels[key]}
-              <ExternalLink size={14} className="text-muted" aria-hidden />
             </a>
           ) : (
             <button type="button" onClick={() => void copyValue(value)} className={linkCls}>
