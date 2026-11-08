@@ -53,6 +53,8 @@ export function ScanPage() {
   const expiredRef = useRef<string | null>(null);
   const cooldown = useRef(0);
   const [cam, setCam] = useState<CamState>("starting");
+  // Código do erro da câmera, mostrado pequeno para diagnóstico (ex.: NotAllowedError).
+  const [camCode, setCamCode] = useState<string | null>(null);
   const [hasFlash, setHasFlash] = useState(false);
   const [flashOn, setFlashOn] = useState(false);
   const [multiCam, setMultiCam] = useState(false);
@@ -122,6 +124,7 @@ export function ScanPage() {
     let cancelled = false;
     let scanner: QrScanner | null = null;
     setCam("starting");
+    setCamCode(null);
     setHasFlash(false);
     setFlashOn(false);
 
@@ -151,9 +154,22 @@ export function ScanPage() {
         setMultiCam((await Scanner.listCameras()).length > 1);
       } catch (e) {
         if (cancelled) return;
-        const name = (e as { name?: string })?.name ?? String(e);
-        const text = `${name} ${String(e)}`;
-        setCam(/NotAllowed|Permission|denied|Security/i.test(text) ? "denied" : /NotFound|Overconstrained|not found/i.test(text) ? "nocamera" : "error");
+        let name = (e as { name?: string })?.name ?? String(e);
+        // O qr-scanner engole o erro do getUserMedia e sempre lança "Camera not found.", mesmo quando a
+        // permissão foi negada (comum em WebViews do iOS, como a do Phantom). Pede de novo, sem restrições,
+        // só para descobrir o motivo real.
+        if (/Camera not found/i.test(name)) {
+          try {
+            const probe = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            probe.getTracks().forEach((tr) => tr.stop());
+            name = "PlaybackError";
+          } catch (pe) {
+            name = (pe as { name?: string })?.name ?? String(pe);
+          }
+          if (cancelled) return;
+        }
+        setCamCode(name.slice(0, 60));
+        setCam(/NotAllowed|Permission|denied|Security/i.test(name) ? "denied" : /NotFound|Overconstrained|not found/i.test(name) ? "nocamera" : "error");
       }
     })().catch(() => !cancelled && setCam("error"));
 
@@ -240,17 +256,20 @@ export function ScanPage() {
         <EmptyState
           icon={CameraOff}
           title={cam === "denied" ? t.deniedTitle : cam === "nocamera" ? t.noCameraTitle : t.errorTitle}
-          hint={cam === "denied" ? t.deniedBody : cam === "nocamera" ? t.noCameraBody : window.isSecureContext ? t.noCameraBody : t.cameraBlockedInsecure}
+          hint={
+            <>
+              {cam === "denied" ? t.deniedBody : cam === "nocamera" ? t.noCameraBody : window.isSecureContext ? t.noCameraBody : t.cameraBlockedInsecure}
+              {camCode && <span className="mt-2 block font-mono text-[11px] opacity-70">{camCode}</span>}
+            </>
+          }
           action={
             <div className="flex flex-col gap-2">
               <Button onClick={() => photoInput.current?.click()} icon={<ImageUp size={16} aria-hidden />}>
                 {t.scanPhoto}
               </Button>
-              {cam !== "nocamera" && (
-                <Button onClick={() => setAttempt((a) => a + 1)} variant="secondary">
-                  {t.retry}
-                </Button>
-              )}
+              <Button onClick={() => setAttempt((a) => a + 1)} variant="secondary">
+                {t.retry}
+              </Button>
             </div>
           }
         />

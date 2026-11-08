@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
-type Props = { icon: LucideIcon; title: string; hint?: string; action?: ReactNode; className?: string };
+type Props = { icon: LucideIcon; title: string; hint?: ReactNode; action?: ReactNode; className?: string };
 
 export function EmptyState({ icon: Icon, title, hint, action, className = "" }: Props) {
   return (

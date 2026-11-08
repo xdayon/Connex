@@ -67,6 +67,19 @@ if (linkDisplayValue("linkedin", "https://linkedin.com/company/acme") !== "https
   failed++;
   console.error("FAIL volta linkedin company");
 }
+// Valor antigo salvo como site ("https://dayon.news") volta como handle e é salvo certo.
+for (const [key, stored, shown, saved] of [
+  ["instagram", "https://dayon.news", "dayon.news", "https://www.instagram.com/dayon.news"],
+  ["tiktok", "https://dayon.news", "dayon.news", "https://www.tiktok.com/@dayon.news"],
+  ["instagram", "https://dayon.news/x", "https://dayon.news/x", null],
+] as [LinkKey, string, string, string | null][]) {
+  const got = linkDisplayValue(key, stored);
+  const r = normalizeLink(key, got);
+  if (got !== shown || (saved && (!r.ok || r.value !== saved))) {
+    failed++;
+    console.error(`FAIL legado ${key}: ${stored} -> ${got} -> ${JSON.stringify(r)}`);
+  }
+}
 
 if (failed) {
   console.error(`${failed} falha(s)`);

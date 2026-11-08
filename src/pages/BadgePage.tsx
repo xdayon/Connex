@@ -18,6 +18,8 @@ import { useAuth } from "../providers/AuthProvider";
 
 const REFRESH_MS = 25_000;
 const RETRY_MS = 8_000;
+// Sem toque por 3 min: para de renovar o QR e libera a tela para apagar (celular esquecido no crachá).
+const IDLE_MS = 3 * 60_000;
 
 function CountdownRing({ fraction }: { fraction: number }) {
   const r = 8;
@@ -50,6 +52,8 @@ export function BadgePage() {
   const [now, setNow] = useState(() => Date.now());
   const [pulse, setPulse] = useState(0);
   const [connected, setConnected] = useState<ConnectionWithContact | null>(null);
+  const [idle, setIdle] = useState(false);
+  const lastActive = useRef(Date.now());
 
   const selection = useShareSelection(profile);
   const shareRef = useRef(selection.payload);
@@ -87,6 +91,10 @@ export function BadgePage() {
   useEffect(() => {
     const tick = () => {
       const n = Date.now();
+      if (n - lastActive.current > IDLE_MS) {
+        setIdle(true);
+        return;
+      }
       setNow(n);
       if (!document.hidden && n >= nextAt.current) void fetchToken();
     };
@@ -95,16 +103,26 @@ export function BadgePage() {
       tick();
     };
     const onVisible = () => {
-      if (!document.hidden) refreshNow();
+      if (document.hidden) return;
+      lastActive.current = Date.now();
+      setIdle(false);
+      refreshNow();
+    };
+    const onActivity = () => {
+      lastActive.current = Date.now();
     };
     tick();
     const timer = window.setInterval(tick, 1000);
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("online", refreshNow);
+    window.addEventListener("pointerdown", onActivity, { passive: true });
+    window.addEventListener("keydown", onActivity);
     return () => {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("online", refreshNow);
+      window.removeEventListener("pointerdown", onActivity);
+      window.removeEventListener("keydown", onActivity);
     };
   }, [fetchToken]);
 
@@ -114,6 +132,7 @@ export function BadgePage() {
   }, [shareSig, fetchToken]);
 
   useEffect(() => {
+    if (idle) return;
     let sentinel: WakeLockSentinel | null = null;
     let cancelled = false;
     const acquire = async () => {
@@ -141,7 +160,14 @@ export function BadgePage() {
       document.removeEventListener("visibilitychange", onVisible);
       void sentinel?.release().catch(() => {});
     };
-  }, []);
+  }, [idle]);
+
+  const wake = () => {
+    lastActive.current = Date.now();
+    setIdle(false);
+    nextAt.current = 0;
+    void fetchToken();
+  };
 
   const uid = user?.id;
   useEffect(() => {
@@ -173,7 +199,7 @@ export function BadgePage() {
   if (!profile?.handle) return null;
   const handle = profile.handle;
   const base = `${window.location.origin}/u/${handle}`;
-  const url = live && token ? `${base}?t=${token}` : base;
+  const url = live && token && !idle ? `${base}?t=${token}` : base;
   const secondsLeft = Math.max(0, Math.ceil((nextAt.current - now) / 1000));
   const name = profileName(profile);
   const hasLinks = Object.keys(profile.links ?? {}).length > 0;
@@ -211,17 +237,32 @@ export function BadgePage() {
       </div>
 
       <div className="flex w-full flex-col items-center gap-4">
-        <div key={pulse} className={`rounded-[28px] bg-white p-3 ring-2 ring-cyan/70 ${pulse > 1 ? "anim-qr-pulse" : ""}`}>
+        <div key={pulse} className={`relative rounded-[28px] bg-white p-3 ring-2 ring-cyan/70 ${pulse > 1 ? "anim-qr-pulse" : ""}`}>
           {tried ? (
-            <QRCode value={url} size={272} label={strings.badge.qrLabel} />
+            <div className={`transition-[filter,opacity] duration-300 ${idle ? "opacity-40 blur-[3px]" : ""}`}>
+              <QRCode value={url} size={272} label={strings.badge.qrLabel} />
+            </div>
           ) : (
             <div className="size-68 animate-pulse rounded-2xl bg-line" aria-label={strings.badge.tokenLoading} />
+          )}
+          {idle && (
+            <button
+              type="button"
+              onClick={wake}
+              className="anim-fade absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-[28px] text-ink"
+            >
+              <span className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-cyan shadow-lg">{strings.badge.idleTap}</span>
+            </button>
           )}
         </div>
 
         {!tried ? (
           <p className="h-5 text-sm text-muted" role="status">
             {strings.badge.tokenLoading}
+          </p>
+        ) : idle ? (
+          <p className="text-sm text-muted" role="status">
+            {strings.badge.idleStatus}
           </p>
         ) : live ? (
           <p className="flex items-center gap-2 text-sm text-muted" role="status">

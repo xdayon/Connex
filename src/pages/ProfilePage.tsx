@@ -121,7 +121,16 @@ export function ProfilePage() {
     const { out, errors: linkErrs } = normalizeAll(links);
     Object.assign(errs, linkErrs);
     setErrors(errs);
-    if (Object.keys(errs).length) return;
+    if (Object.keys(errs).length) {
+      toast(t.fixErrors, "error");
+      // Espera as seções com erro abrirem e leva a pessoa até o primeiro campo inválido.
+      setTimeout(() => {
+        const el = document.querySelector<HTMLElement>('section [aria-invalid="true"]');
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        el?.focus({ preventScroll: true });
+      }, 80);
+      return;
+    }
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
@@ -217,7 +226,10 @@ export function ProfilePage() {
               aria-label={t.displayName}
               aria-invalid={!!errors.name}
               placeholder={t.displayName}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (errors.name) setErrors(({ name: _, ...rest }) => rest);
+              }}
               className={`min-h-11 w-full rounded-2xl border bg-surface-2 px-3 text-base text-text focus:border-cyan focus:outline-none ${errors.name ? "border-danger" : "border-line"}`}
             />
             {errors.name && <p className="text-xs text-danger">{errors.name}</p>}
@@ -322,7 +334,10 @@ export function ProfilePage() {
             <LinkFields
               values={links}
               errors={errors}
-              onChange={(k, v) => setLinks((l) => ({ ...l, [k]: v }))}
+              onChange={(k, v) => {
+                setLinks((l) => ({ ...l, [k]: v }));
+                if (errors[k]) setErrors(({ [k]: _, ...rest }) => rest);
+              }}
               hidden={hidden}
               onHiddenChange={setHidden}
               wallet={profile.wallet}
@@ -349,6 +364,7 @@ export function ProfilePage() {
           maxLength={40}
           placeholder={t.skillsPlaceholder}
           suggestions={w.skillSuggestions}
+          collapsibleSuggestions
         />
         <ChipEditor
           label={t.lookingFor}
@@ -358,6 +374,7 @@ export function ProfilePage() {
           maxLength={60}
           placeholder={t.lookingForPlaceholder}
           suggestions={w.lookingForSuggestions}
+          collapsibleSuggestions
         />
         <ChipEditor
           label={t.offering}
@@ -367,6 +384,7 @@ export function ProfilePage() {
           maxLength={60}
           placeholder={t.offeringPlaceholder}
           suggestions={w.offeringSuggestions}
+          collapsibleSuggestions
         />
       </Card>
 

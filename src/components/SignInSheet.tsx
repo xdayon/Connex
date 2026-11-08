@@ -3,6 +3,9 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { ExternalLink, FlaskConical, Loader2 } from "lucide-react";
 import { strings } from "../i18n/strings";
 import { Sheet } from "./ui/Sheet";
+// Ícones oficiais, extraídos de @solana/wallet-adapter-phantom 0.9.30 e -solflare 0.6.34 (fornecidos pelas próprias carteiras).
+import phantomIcon from "../assets/wallets/phantom.svg";
+import solflareIcon from "../assets/wallets/solflare.svg";
 
 function walletBrowseLink(wallet: "phantom" | "solflare"): string {
   const url = encodeURIComponent(window.location.href);
@@ -47,10 +50,12 @@ export function SignInSheet({ open, busy, error, onClose, onChoose, onChooseDev 
           <p className="rounded-2xl border border-line bg-surface-2 p-4 text-sm text-muted">{strings.wallet.noWallets}</p>
           {/* iOS and desktop browsers without an extension: open this page in the wallet's in-app browser. */}
           <a className={rowClass} href={walletBrowseLink("phantom")}>
+            <img src={phantomIcon} alt="" width={32} height={32} className="size-8 rounded-lg" />
             <span className="flex-1 font-medium">{strings.wallet.openInPhantom}</span>
             <ExternalLink size={16} className="text-muted" aria-hidden />
           </a>
           <a className={rowClass} href={walletBrowseLink("solflare")}>
+            <img src={solflareIcon} alt="" width={32} height={32} className="size-8 rounded-lg" />
             <span className="flex-1 font-medium">{strings.wallet.openInSolflare}</span>
             <ExternalLink size={16} className="text-muted" aria-hidden />
           </a>

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { BrandIcon } from "./BrandIcon";
 import { Switch } from "./ui/Switch";
@@ -38,6 +38,11 @@ export function LinkFields({ values, errors, onChange, hidden, onHiddenChange, w
   const more = LINK_KEYS.slice(PRIMARY_COUNT);
   const filledMore = more.filter((k) => values[k].trim() !== "").length;
   const [open, setOpen] = useState(false);
+  // Erro numa rede de "Mais redes": abre a seção, senão o erro fica escondido e o salvar parece não fazer nada.
+  const moreHasError = more.some((k) => errors[k]);
+  useEffect(() => {
+    if (moreHasError) setOpen(true);
+  }, [moreHasError]);
 
   const setShared = (k: ShareKey, on: boolean) => {
     const rest = hidden.filter((h) => h !== k);
@@ -101,6 +106,10 @@ export function LinkFields({ values, errors, onChange, hidden, onHiddenChange, w
 
   return (
     <div className="flex flex-col gap-2">
+      <p className="text-xs text-muted">{strings.me.shareDefaultHint}</p>
+      <div className="-mb-1 flex justify-end pr-0.5" aria-hidden>
+        <span className="font-mono text-[10px] font-medium uppercase tracking-widest text-muted">{strings.me.shareColumn}</span>
+      </div>
       {wallet && (
         <Row icon={<BrandIcon k="wallet" size={20} />} toggle={toggleFor("wallet")}>
           <div className="flex min-h-11 items-center gap-2">
@@ -119,8 +128,7 @@ export function LinkFields({ values, errors, onChange, hidden, onHiddenChange, w
         <ChevronDown size={16} className={`transition ${open ? "rotate-180" : ""}`} aria-hidden />
         {filledMore > 0 ? strings.me.moreNetworksAdded(filledMore) : strings.me.moreNetworks}
       </button>
-      {open && more.map(field)}
-      <p className="text-xs text-muted">{strings.me.shareDefaultHint}</p>
+      {open && <div className="anim-reveal flex flex-col gap-2">{more.map(field)}</div>}
     </div>
   );
 }

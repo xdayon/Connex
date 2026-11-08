@@ -164,7 +164,15 @@ export function linkDisplayValue(key: LinkKey, stored: string | null | undefined
   if (!spec || !/^https:\/\//i.test(stored)) return stored;
   try {
     const u = new URL(stored);
-    if (!spec.host.test(u.hostname)) return stored;
+    if (!spec.host.test(u.hostname)) {
+      // Versões antigas tratavam handles com ponto ("dayon.news") como site e salvavam
+      // "https://dayon.news". Se a URL é só um host que vale como handle, devolve o handle.
+      if ((u.pathname === "/" || u.pathname === "") && !u.search && !u.hash) {
+        const h = spec.lower ? u.hostname.toLowerCase() : u.hostname;
+        if (spec.re.test(h)) return h;
+      }
+      return stored;
+    }
     return handleFromPath(spec, u.pathname) ?? stored;
   } catch {
     return stored;

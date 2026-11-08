@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Plus } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { strings } from "../i18n/strings";
 import { Chip } from "./ui/Chip";
 
@@ -11,10 +11,13 @@ type Props = {
   maxLength: number;
   placeholder: string;
   suggestions?: readonly string[];
+  // No perfil as sugestões começam recolhidas para não poluir a tela.
+  collapsibleSuggestions?: boolean;
 };
 
-export function ChipEditor({ label, items, onChange, maxItems, maxLength, placeholder, suggestions }: Props) {
+export function ChipEditor({ label, items, onChange, maxItems, maxLength, placeholder, suggestions, collapsibleSuggestions }: Props) {
   const [draft, setDraft] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(!collapsibleSuggestions);
   const full = items.length >= maxItems;
   const left = (suggestions ?? []).filter((s) => !items.some((i) => i.toLowerCase() === s.toLowerCase()));
 
@@ -65,8 +68,19 @@ export function ChipEditor({ label, items, onChange, maxItems, maxLength, placeh
           <Plus size={18} aria-hidden />
         </button>
       </form>
-      {!full && left.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+      {!full && left.length > 0 && collapsibleSuggestions && (
+        <button
+          type="button"
+          aria-expanded={showSuggestions}
+          onClick={() => setShowSuggestions((o) => !o)}
+          className="-my-1 inline-flex min-h-10 items-center gap-1.5 self-start text-xs font-medium text-muted transition-colors hover:text-text"
+        >
+          <ChevronDown size={14} className={`transition-transform duration-200 ${showSuggestions ? "rotate-180" : ""}`} aria-hidden />
+          {showSuggestions ? strings.me.hideSuggestions : strings.me.showSuggestions}
+        </button>
+      )}
+      {!full && left.length > 0 && showSuggestions && (
+        <div className="anim-reveal flex flex-wrap gap-1.5">
           {left.map((s) => (
             <Chip key={s} onClick={() => onChange([...items, s])} className="px-2.5 text-xs">
               + {s}
