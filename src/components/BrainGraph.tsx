@@ -201,6 +201,8 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
   const fitK = useRef(1);
   const namesOn = useRef(false);
   const nativeFull = useRef(false);
+  // Toque numa pessoa em tela cheia: fecha primeiro (desfaz a entrada no histórico) e só depois navega.
+  const pendingNav = useRef<string | null>(null);
 
   // só vira estado React ao cruzar o limiar de zoom; o pan/zoom segue via setAttribute
   const syncNames = useCallback(() => {
@@ -276,7 +278,8 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     try {
-      const p = root?.requestFullscreen?.();
+      // Na WebView do APK a tela cheia nativa depende de onShowCustomView, que o shell não implementa.
+      const p = /; wv\)/.test(navigator.userAgent) ? undefined : root?.requestFullscreen?.();
       if (p) {
         nativeFull.current = true;
         p.catch(() => {
@@ -286,7 +289,12 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
     } catch {
       nativeFull.current = false;
     }
-    const onPop = () => setFull(false);
+    const onPop = () => {
+      setFull(false);
+      const to = pendingNav.current;
+      pendingNav.current = null;
+      if (to) navigate(to);
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeFull();
     };
@@ -309,7 +317,7 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
         document.exitFullscreen?.().catch(() => {});
       }
     };
-  }, [full, closeFull]);
+  }, [full, closeFull, navigate]);
 
   const zoomAt = useCallback(
     (px: number, py: number, factor: number) => {
@@ -391,7 +399,13 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
 
   const tapNode = (n: GraphNode) => {
     if (gesture.current.moved) return;
-    if (n.type === "person") navigate(`/connections/${n.id.slice(2)}`);
+    if (n.type === "person") {
+      const to = `/connections/${n.id.slice(2)}`;
+      if (full && window.history.state?.brainFull) {
+        pendingNav.current = to;
+        window.history.back();
+      } else navigate(to);
+    }
     else if (n.type === "event" || n.type === "skill") setFocus((f) => (f === n.id ? null : n.id));
   };
 
