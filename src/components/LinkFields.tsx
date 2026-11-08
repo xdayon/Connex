@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { BrandIcon } from "./BrandIcon";
+import { InfoTip } from "./ui/InfoTip";
 import { Switch } from "./ui/Switch";
 import { strings } from "../i18n/strings";
 import { shortAddress } from "../lib/format";
@@ -106,9 +107,20 @@ export function LinkFields({ values, errors, onChange, hidden, onHiddenChange, w
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs text-muted">{strings.me.shareDefaultHint}</p>
-      <div className="-mb-1 flex justify-end pr-0.5" aria-hidden>
-        <span className="font-mono text-[10px] font-medium uppercase tracking-widest text-muted">{strings.me.shareColumn}</span>
+      {/* À esquerda, como preencher. À direita, o cabeçalho da coluna dos botões: "Auto share"
+          quebra em duas linhas centradas sobre eles (mesma largura e margem do Switch compacto,
+          44px com -mr-1). A explicação do auto share abre no "i". */}
+      <div className="-mb-1 flex items-center justify-between gap-3">
+        <p className="text-xs text-muted">{strings.me.linksHint}</p>
+        <div className="flex shrink-0 items-center gap-1">
+          <InfoTip label={strings.me.shareInfoLabel}>{strings.me.shareDefaultHint}</InfoTip>
+          <span
+            aria-hidden
+            className="-mr-1 w-11 text-center font-mono text-[10px] font-medium uppercase leading-tight tracking-wider text-muted"
+          >
+            {strings.me.shareColumn}
+          </span>
+        </div>
       </div>
       {wallet && (
         <Row icon={<BrandIcon k="wallet" size={20} />} toggle={toggleFor("wallet")}>

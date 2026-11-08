@@ -17,10 +17,10 @@ import { useShareSelection } from "../lib/useShareSelection";
 import { useAuth } from "../providers/AuthProvider";
 
 // Crachás impressos e QRs antigos ainda podem apontar para o endereço workers.dev.
-const ALLOWED_ORIGINS = [window.location.origin, "https://connex.contact", "https://connex.dayon-x.workers.dev"];
+const ALLOWED_ORIGINS = [window.location.origin, "https://connex.contact", "https://connex.dayon-x.workers.dev", "https://connex-dev.dayon-x.workers.dev"];
 const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
 
-type Target = { kind: "profile"; handle: string; token: string | null } | { kind: "event"; code: string };
+type Target = { kind: "profile"; handle: string; token: string | null } | { kind: "event"; code: string; presence: string | null };
 
 function parseCode(text: string): Target | null {
   let url: URL;
@@ -33,7 +33,7 @@ function parseCode(text: string): Target | null {
   const u = url.pathname.match(/^\/u\/([A-Za-z0-9_]{3,20})\/?$/);
   if (u) return { kind: "profile", handle: u[1].toLowerCase(), token: url.searchParams.get("t") };
   const e = url.pathname.match(/^\/e\/([A-Za-z0-9]{6})\/?$/);
-  if (e) return { kind: "event", code: e[1].toUpperCase() };
+  if (e) return { kind: "event", code: e[1].toUpperCase(), presence: url.searchParams.get("p") };
   return null;
 }
 
@@ -105,7 +105,7 @@ export function ScanPage() {
             const ev = data as EventRow;
             setCurrentEventId(ev.id);
             toast(t.joinedEvent, "success");
-            navigate(`/events/${ev.id}`);
+            navigate(target.presence ? `/events/${ev.id}?presence=${encodeURIComponent(target.presence)}` : `/events/${ev.id}`);
             return;
           }
         }
@@ -141,6 +141,20 @@ export function ScanPage() {
       scanner = new Scanner(video.current, (r) => void onDecodedRef.current(r.data), {
         preferredCamera: "environment",
         maxScansPerSecond: 10,
+        // O padrão olha 2/3 do quadro reduzidos a 400 px: pouco para um QR denso mostrado de
+        // longe (webcam de notebook). Olha 85% do quadro em até 720 px.
+        calculateScanRegion: (v) => {
+          const size = Math.round(Math.min(v.videoWidth, v.videoHeight) * 0.85);
+          const out = Math.min(size, 720);
+          return {
+            x: Math.round((v.videoWidth - size) / 2),
+            y: Math.round((v.videoHeight - size) / 2),
+            width: size,
+            height: size,
+            downScaledWidth: out,
+            downScaledHeight: out,
+          };
+        },
         highlightScanRegion: false,
         highlightCodeOutline: false,
         returnDetailedScanResult: true,

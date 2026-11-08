@@ -201,7 +201,11 @@ export function ProfilePage() {
       "success",
     );
 
-  const filledLinks = LINK_KEYS.filter((k) => links[k].trim() !== "");
+  // Links recolhido mostra o que está ligado para sair automaticamente: a carteira e as redes preenchidas.
+  const activeKeys: ShareKey[] = [
+    ...(profile.wallet ? (["wallet"] as const) : []),
+    ...LINK_KEYS.filter((k) => links[k].trim() !== ""),
+  ].filter((k) => !hidden.includes(k));
   const years = Array.from({ length: new Date().getFullYear() - 1899 }, (_, i) => new Date().getFullYear() - i);
 
   return (
@@ -251,8 +255,13 @@ export function ProfilePage() {
             full
             aria-expanded={fullOpen}
             onClick={() => setFullOpen((o) => !o)}
+            className="px-3!"
           >
-            {t.editFull}
+            {/* Texto e seta num bloco só, sem quebrar: no celular o botão tem ~150px. */}
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              {t.editFull}
+              <ChevronDown size={14} className={`shrink-0 text-muted transition ${fullOpen ? "rotate-180" : ""}`} aria-hidden />
+            </span>
           </Button>
         </div>
         {fullOpen && (
@@ -330,7 +339,6 @@ export function ProfilePage() {
         </button>
         {linksOpen ? (
           <>
-            <p className="-mt-2 text-sm text-muted">{t.linksHint}</p>
             <LinkFields
               values={links}
               errors={errors}
@@ -344,9 +352,9 @@ export function ProfilePage() {
             />
           </>
         ) : (
-          filledLinks.length > 0 && (
+          activeKeys.length > 0 && (
             <div className="flex flex-wrap items-center gap-3 text-text">
-              {filledLinks.map((k) => (
+              {activeKeys.map((k) => (
                 <BrandIcon key={k} k={k} size={20} />
               ))}
             </div>

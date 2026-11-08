@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { forceCollide, forceLink, forceManyBody, forceRadial, forceSimulation, type SimulationLinkDatum, type SimulationNodeDatum } from "d3-force";
-import { LocateFixed, Maximize2, X } from "lucide-react";
+import { ChevronRight, LocateFixed, Maximize2, X } from "lucide-react";
 import { strings } from "../i18n/strings";
 import { normalize } from "../lib/brainSearch";
 import { profileName, type ConnectionWithContact } from "../lib/types";
 import { useAuth } from "../providers/AuthProvider";
-import { initials } from "./ui/Avatar";
+import { Avatar, initials } from "./ui/Avatar";
+import { SealedBadge } from "./ui/SealedBadge";
+import { VerifiedBadge } from "./ui/VerifiedBadge";
+import { relativeDate } from "../lib/format";
 
 type NodeType = "me" | "event" | "person" | "skill";
 
@@ -177,9 +180,11 @@ const btnClass =
 type Props = {
   connections: ConnectionWithContact[];
   highlightIds?: string[] | null;
+  // Ids dos contatos com selo de encontro confirmado dos dois lados.
+  sealed?: Set<string>;
 };
 
-export function BrainGraph({ connections, highlightIds = null }: Props) {
+export function BrainGraph({ connections, highlightIds = null, sealed }: Props) {
   const t = strings.brain;
   const navigate = useNavigate();
   const { profile } = useAuth();
@@ -196,6 +201,8 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
   const raf = useRef(0);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [focus, setFocus] = useState<string | null>(null);
+  // Pessoa tocada no grafo: mostra o cartão resumido antes de abrir o perfil completo.
+  const [peek, setPeek] = useState<string | null>(null);
   const [names, setNames] = useState(false);
   const [full, setFull] = useState(false);
   const fitK = useRef(1);
@@ -397,17 +404,36 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
     }
   };
 
+  const openProfile = (connectionId: string) => {
+    const to = `/connections/${connectionId}`;
+    if (full && window.history.state?.brainFull) {
+      pendingNav.current = to;
+      window.history.back();
+    } else navigate(to);
+  };
+
+  const closePeek = () => {
+    setPeek(null);
+    setFocus(null);
+  };
+
   const tapNode = (n: GraphNode) => {
     if (gesture.current.moved) return;
     if (n.type === "person") {
-      const to = `/connections/${n.id.slice(2)}`;
-      if (full && window.history.state?.brainFull) {
-        pendingNav.current = to;
-        window.history.back();
-      } else navigate(to);
+      const id = n.id.slice(2);
+      // Segundo toque na mesma pessoa abre o perfil; o primeiro só mostra o resumo.
+      if (peek === id) openProfile(id);
+      else {
+        setPeek(id);
+        setFocus(n.id);
+      }
+    } else if (n.type === "event" || n.type === "skill") {
+      setPeek(null);
+      setFocus((f) => (f === n.id ? null : n.id));
     }
-    else if (n.type === "event" || n.type === "skill") setFocus((f) => (f === n.id ? null : n.id));
   };
+
+  const peekConn = peek ? connections.find((c) => c.id === peek) : null;
 
   const focusNode = focus ? layout.nodes.find((n) => n.id === focus) : null;
   const searchSet = useMemo(() => {
@@ -622,7 +648,13 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
           </button>
         )}
 
-        {chip && (
+        {peekConn && (
+          <div className="absolute inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] mx-auto max-w-md">
+            <PeekCard c={peekConn} sealed={!!sealed?.has(peekConn.contact_id)} onOpen={() => openProfile(peekConn.id)} onClose={closePeek} />
+          </div>
+        )}
+
+        {chip && !peekConn && (
           <div className="absolute inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] flex">
             <span className="inline-flex min-h-9 max-w-full items-center gap-1 rounded-full border border-cyan bg-surface-2/95 py-1 pl-3 pr-1 text-sm text-text backdrop-blur">
               <span className="truncate">{chip}</span>
@@ -640,6 +672,57 @@ export function BrainGraph({ connections, highlightIds = null }: Props) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function PeekCard({ c, sealed, onOpen, onClose }: { c: ConnectionWithContact; sealed: boolean; onOpen: () => void; onClose: () => void }) {
+  const t = strings.brain;
+  const name = profileName(c.contact);
+  const sub = [c.contact?.headline, c.contact?.company].filter(Boolean).join(" · ");
+  const chips = [...c.tags, ...(c.contact?.skills ?? [])].slice(0, 4);
+  return (
+    <div role="dialog" aria-label={name} className="anim-toast rounded-card border border-line bg-surface-2/95 p-3 shadow-lg backdrop-blur">
+      <div className="flex items-start gap-3">
+        <Avatar src={c.contact?.avatar_url} name={name} size="md" />
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-1 font-semibold text-text">
+            <span className="truncate">{name}</span>
+            {c.verified && <VerifiedBadge />}
+            {sealed && <SealedBadge />}
+          </p>
+          {sub && <p className="truncate text-sm text-muted">{sub}</p>}
+          <p className="truncate text-xs text-muted">
+            {c.event ? `${t.metAt} ${c.event.name}` : t.met} · {relativeDate(c.met_at)}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t.closePeek}
+          className="-mr-1 -mt-1 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted hover:text-text"
+        >
+          <X size={16} aria-hidden />
+        </button>
+      </div>
+      {c.note && <p className="mt-2 line-clamp-2 text-sm text-text/90">{c.note}</p>}
+      {chips.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {chips.map((s) => (
+            <span key={s} className="rounded-full border border-line px-2 py-0.5 text-xs text-muted">
+              {s}
+            </span>
+          ))}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={onOpen}
+        className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-full bg-cyan px-4 text-sm font-semibold text-ink transition active:scale-[0.98]"
+      >
+        {t.openProfile}
+        <ChevronRight size={16} aria-hidden />
+      </button>
     </div>
   );
 }

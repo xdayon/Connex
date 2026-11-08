@@ -11,6 +11,26 @@
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  // Públicos (já vão no bundle do app). Segredos ficam no cofre: FEE_PAYER_SECRET,
+  // PROOF_SERVER_SECRET e, opcional, SOLANA_RPC_URL (Helius).
+  "vars": {
+    "SOLANA_CLUSTER": "mainnet",
+    "SUPABASE_URL": "https://krqbccfxrtpycfsgtbtb.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_toOU9TiY_ZHj17Plg9dKPg_dsLwQ48-"
+  },
+  "env": {
+    // Versão de teste (devnet, dinheiro de mentira): connex-dev.dayon-x.workers.dev.
+    // Build e deploy: npm run deploy:dev
+    "dev": {
+      "routes": [],
+      "workers_dev": true,
+      "vars": {
+        "SOLANA_CLUSTER": "devnet",
+        "SUPABASE_URL": "https://krqbccfxrtpycfsgtbtb.supabase.co",
+        "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_toOU9TiY_ZHj17Plg9dKPg_dsLwQ48-"
+      }
+    }
+  },
   "assets": {
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]

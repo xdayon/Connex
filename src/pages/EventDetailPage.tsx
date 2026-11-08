@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
-import { useParams } from "react-router";
-import { CalendarX, Check, ChevronDown, Copy, MapPin, Share2, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useSearchParams } from "react-router";
+import { CalendarX, Check, ChevronDown, Copy, ExternalLink, MapPin, QrCode, Share2, Users } from "lucide-react";
 import { PersonSheet } from "../components/event/PersonSheet";
+import { PresenceProofSheet } from "../components/PresenceProofSheet";
+import { PresenceQrSheet } from "../components/PresenceQrSheet";
 import { QRCode } from "../components/QRCode";
 import { Avatar } from "../components/ui/Avatar";
 import { Button } from "../components/ui/Button";
@@ -9,6 +11,7 @@ import { Card } from "../components/ui/Card";
 import { Chip } from "../components/ui/Chip";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Skeleton } from "../components/ui/Skeleton";
+import { SealedBadge } from "../components/ui/SealedBadge";
 import { Switch } from "../components/ui/Switch";
 import { useToast } from "../components/ui/Toast";
 import { VerifiedBadge } from "../components/ui/VerifiedBadge";
@@ -19,12 +22,14 @@ import { friendlyError } from "../lib/errors";
 import { formatDateTime } from "../lib/format";
 import { checkInToEvent } from "../lib/liveEvents";
 import { matchPerson, type MatchReason } from "../lib/matching";
+import { explorerTx, proofCluster, proofsEnabled, type Proof } from "../lib/proofs";
 import { supabase } from "../lib/supabase";
 import { profileName, type EventPerson, type EventRow } from "../lib/types";
 import { useAsync } from "../lib/useAsync";
 import { useAuth } from "../providers/AuthProvider";
 
 const t = strings.events;
+const t2 = strings.presence;
 
 type Filter = "matches" | "everyone";
 
@@ -41,6 +46,48 @@ export function EventDetailPage() {
   const [filter, setFilter] = useState<Filter | null>(null);
   const [inviteOpen, setInviteOpen] = useState<boolean | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const presenceToken = params.get("presence");
+  const [proofsOn, setProofsOn] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [proveOpen, setProveOpen] = useState(false);
+  const [attend, setAttend] = useState<Proof | null>(null);
+  const [attendLoaded, setAttendLoaded] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void proofsEnabled().then((ok) => alive && setProofsOn(ok));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const loadAttend = async () => {
+    if (!user) return;
+    const { data: row } = await supabase
+      .from("proofs")
+      .select("*")
+      .eq("kind", "attend")
+      .eq("cluster", proofCluster)
+      .eq("user_id", user.id)
+      .eq("event_id", id)
+      .maybeSingle();
+    setAttend((row as Proof | null) ?? null);
+    setAttendLoaded(true);
+  };
+
+  useEffect(() => {
+    setAttendLoaded(false);
+    void loadAttend();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user?.id]);
+
+  const attended = attend?.status === "confirmed";
+
+  // Chegou pelo QR de presença e ainda não provou: abre a folha de prova sozinha.
+  useEffect(() => {
+    if (presenceToken && attendLoaded && !attended && proofsOn) setProveOpen(true);
+  }, [presenceToken, attendLoaded, attended, proofsOn]);
 
   const { data, loading, error, reload } = useAsync(async () => {
     const { data: ev, error: e1 } = await supabase.from("events").select("*").eq("id", id).maybeSingle();
@@ -142,6 +189,20 @@ export function EventDetailPage() {
           )}
         </p>
         {event.description && <p className="mt-3 whitespace-pre-line break-words text-sm">{event.description}</p>}
+        {attended && attend?.signature && (
+          <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <SealedBadge label text={t2.proved} />
+            <a href={explorerTx(attend.signature)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-cyan underline-offset-2 hover:underline">
+              {t2.viewTx}
+              <ExternalLink size={14} aria-hidden />
+            </a>
+          </p>
+        )}
+        {proofsOn && event.created_by === user?.id && (
+          <Button variant="secondary" className="mt-3" icon={<QrCode size={16} aria-hidden />} onClick={() => setQrOpen(true)}>
+            {t2.button}
+          </Button>
+        )}
       </div>
 
       {!attendee ? (
@@ -250,6 +311,26 @@ export function EventDetailPage() {
             )}
           </Card>
         </>
+      )}
+
+      {proofsOn && event.created_by === user?.id && (
+        <PresenceQrSheet open={qrOpen} onClose={() => setQrOpen(false)} eventId={event.id} joinCode={event.join_code} />
+      )}
+      {presenceToken && (
+        <PresenceProofSheet
+          open={proveOpen}
+          onClose={() => setProveOpen(false)}
+          eventId={event.id}
+          token={presenceToken}
+          onDone={() => {
+            setProveOpen(false);
+            const next = new URLSearchParams(params);
+            next.delete("presence");
+            setParams(next, { replace: true });
+            void loadAttend();
+            toast(t2.done, "success");
+          }}
+        />
       )}
 
       <PersonSheet person={selected} eventId={event.id} onClose={() => setSelected(null)} onUnlocked={() => {

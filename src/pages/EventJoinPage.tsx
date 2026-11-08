@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router";
+import { Navigate, useNavigate, useParams, useSearchParams } from "react-router";
 import { CalendarX } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -15,6 +15,9 @@ import { useAuth } from "../providers/AuthProvider";
 
 export function EventJoinPage() {
   const { code = "" } = useParams();
+  const [query] = useSearchParams();
+  const presence = query.get("p");
+  const intentPath = presence ? `/e/${code}?p=${encodeURIComponent(presence)}` : `/e/${code}`;
   const { session, profile, loading } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -30,17 +33,17 @@ export function EventJoinPage() {
       const ev = data as EventRow;
       setCurrentEventId(ev.id);
       toast(strings.events.joined, "success");
-      navigate(`/events/${ev.id}`, { replace: true });
+      navigate(presence ? `/events/${ev.id}?presence=${encodeURIComponent(presence)}` : `/events/${ev.id}`, { replace: true });
     });
-  }, [ready, code, navigate, toast]);
+  }, [ready, code, presence, navigate, toast]);
 
   useEffect(() => {
-    if (!loading && (!session || !profile)) saveIntent({ path: `/e/${code}` });
-  }, [loading, session, profile, code]);
+    if (!loading && (!session || !profile)) saveIntent({ path: intentPath });
+  }, [loading, session, profile, intentPath]);
 
   if (!loading && (!session || !profile)) return <Navigate to="/" replace />;
   if (!loading && profile && !profile.handle) {
-    saveIntent({ path: `/e/${code}` });
+    saveIntent({ path: intentPath });
     return <Navigate to="/welcome" replace />;
   }
   if (error) {

@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { ArrowLeft, Check, Copy, Lock, Trash2, UserX } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Coins,
+  Copy,
+  Lock,
+  Trash2,
+  UserX,
+} from "lucide-react";
 import { ConnectedSheet } from "../components/ConnectedSheet";
+import { SealCard } from "../components/SealCard";
+import { TipSheet } from "../components/TipSheet";
 import {
   LinkButtons,
   ProfileExtras,
@@ -21,8 +31,13 @@ import { copyText } from "../lib/clipboard";
 import { friendlyError } from "../lib/errors";
 import { shortAddress } from "../lib/format";
 import { supabase } from "../lib/supabase";
-import { CONNECTION_SELECT, type ConnectionWithContact } from "../lib/types";
+import {
+  CONNECTION_SELECT,
+  profileName,
+  type ConnectionWithContact,
+} from "../lib/types";
 import { useAsync } from "../lib/useAsync";
+import { useAuth } from "../providers/AuthProvider";
 
 function formatWhen(iso: string): string {
   return new Date(iso).toLocaleString("en", {
@@ -39,6 +54,7 @@ export function ConnectionDetailPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const toast = useToast();
+  const { user } = useAuth();
   const t = strings.detail;
   const { data, setData, loading, error, reload } = useAsync(async () => {
     const { data: row, error: err } = await supabase
@@ -57,6 +73,7 @@ export function ConnectionDetailPage() {
   const [tagInput, setTagInput] = useState("");
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [tipOpen, setTipOpen] = useState(false);
 
   useEffect(() => {
     if (params.get("new") === "1") {
@@ -199,6 +216,10 @@ export function ConnectionDetailPage() {
         </p>
       </Card>
 
+      {data.verified && contact && user && (
+        <SealCard me={user.id} contactId={data.contact_id} name={profileName(contact)} avatar={contact.avatar_url} />
+      )}
+
       {contact ? (
         <>
           <Card className="p-5">
@@ -217,30 +238,45 @@ export function ConnectionDetailPage() {
             }}
           />
           {data.shared_wallet && (
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface p-3">
-              <div className="min-w-0">
-                <p className="text-xs uppercase tracking-widest text-muted">
-                  {t.wallet}
-                </p>
-                <p className="font-mono text-sm">
-                  {shortAddress(data.shared_wallet)}
-                </p>
+            <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs uppercase tracking-widest text-muted">
+                    {t.wallet}
+                  </p>
+                  <p className="font-mono text-sm">
+                    {shortAddress(data.shared_wallet)}
+                  </p>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<Copy size={16} aria-hidden />}
+                  onClick={async () =>
+                    toast(
+                      (await copyText(data.shared_wallet ?? ""))
+                        ? strings.common.copied
+                        : strings.errors.generic,
+                      "success",
+                    )
+                  }
+                >
+                  {strings.common.copy}
+                </Button>
               </div>
               <Button
-                variant="secondary"
-                size="sm"
-                icon={<Copy size={16} aria-hidden />}
-                onClick={async () =>
-                  toast(
-                    (await copyText(data.shared_wallet ?? ""))
-                      ? strings.common.copied
-                      : strings.errors.generic,
-                    "success",
-                  )
-                }
+                full
+                icon={<Coins size={16} aria-hidden />}
+                onClick={() => setTipOpen(true)}
               >
-                {strings.common.copy}
+                {strings.tip.button}
               </Button>
+              <TipSheet
+                open={tipOpen}
+                onClose={() => setTipOpen(false)}
+                to={data.shared_wallet}
+                name={profileName(contact)}
+              />
             </div>
           )}
         </>

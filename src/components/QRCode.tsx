@@ -5,7 +5,8 @@ type Props = { value: string; size?: number; label: string; className?: string; 
 
 export function QRCode({ value, size = 260, label, className = "", withLogo = false }: Props) {
   const { count, path } = useMemo(() => {
-    const { data, size: count } = encode(value, { ecc: withLogo ? "H" : "M", border: 0 });
+    // Com o símbolo: correção Q (aguenta 25%). A H deixava o QR mais denso e falhava em foto.
+    const { data, size: count } = encode(value, { ecc: withLogo ? "Q" : "M", border: 0 });
     let d = "";
     for (let y = 0; y < count; y++) {
       let x = 0;
@@ -39,7 +40,7 @@ export function QRCode({ value, size = 260, label, className = "", withLogo = fa
       <rect width={box} height={box} fill="#ffffff" />
       <path transform={`translate(${quiet} ${quiet})`} d={path} fill="#0a0d16" />
       {withLogo && (
-        // Correção H aguenta até 30% de perda; o símbolo cobre cerca de 7% dos módulos.
+        // O símbolo cobre cerca de 8% dos módulos, bem abaixo dos 25% da correção Q.
         <g shapeRendering="geometricPrecision">
           <rect x={box / 2 - logo / 2 - 1} y={box / 2 - logo / 2 - 1} width={logo + 2} height={logo + 2} rx={(logo + 2) * 0.24} fill="#ffffff" />
           <svg x={box / 2 - logo / 2} y={box / 2 - logo / 2} width={logo} height={logo} viewBox="0 0 512 512" aria-hidden>

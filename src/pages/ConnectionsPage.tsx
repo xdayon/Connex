@@ -7,14 +7,17 @@ import { Card } from "../components/ui/Card";
 import { Chip } from "../components/ui/Chip";
 import { PageLoader } from "../components/Logo";
 import { EmptyState } from "../components/ui/EmptyState";
+import { SealedBadge } from "../components/ui/SealedBadge";
 import { VerifiedBadge } from "../components/ui/VerifiedBadge";
 import { strings } from "../i18n/strings";
 import { parseQuery, searchConnections, topSkills, type Reason } from "../lib/brainSearch";
 import { friendlyError } from "../lib/errors";
 import { relativeDate } from "../lib/format";
+import { loadSeals, type SealState } from "../lib/proofs";
 import { supabase } from "../lib/supabase";
 import { CONNECTION_SELECT, profileName, type ConnectionWithContact } from "../lib/types";
 import { useAsync } from "../lib/useAsync";
+import { useAuth } from "../providers/AuthProvider";
 
 const BrainGraph = lazy(() => import("../components/BrainGraph").then((m) => ({ default: m.BrainGraph })));
 
@@ -65,7 +68,7 @@ function reasonText(r: Reason): { prefix?: string; text: string } {
   }
 }
 
-function PersonRow({ c, reasons, tokens }: { c: ConnectionWithContact; reasons?: Reason[]; tokens?: string[] }) {
+function PersonRow({ c, reasons, tokens, seal }: { c: ConnectionWithContact; reasons?: Reason[]; tokens?: string[]; seal?: SealState }) {
   const t = strings.brain;
   return (
     <Link
@@ -77,8 +80,11 @@ function PersonRow({ c, reasons, tokens }: { c: ConnectionWithContact; reasons?:
         <p className="flex items-center gap-1.5 font-medium">
           <span className="truncate">{profileName(c.contact)}</span>
           {c.verified && <VerifiedBadge />}
+          {seal === "sealed" && <SealedBadge />}
         </p>
         <p className="truncate text-sm text-muted">{c.contact?.headline || (c.contact?.handle ? `@${c.contact.handle}` : "")}</p>
+        {/* A pessoa já assinou a metade dela do selo: falta a minha. */}
+        {seal === "theirs" && <SealedBadge label text={strings.seal.signHalf} className="mt-1.5" />}
         {reasons && reasons.length > 0 && (
           <ul className="mt-2 flex flex-wrap gap-1.5">
             {reasons.map((r, i) => {
@@ -111,11 +117,25 @@ export function ConnectionsPage() {
     if (err) throw err;
     return rows as ConnectionWithContact[];
   }, []);
+  const { user } = useAuth();
+  // Selos de encontro por contato: fechados dos dois lados ou esperando a minha metade.
+  const [seals, setSeals] = useState<Record<string, SealState>>({});
   const [raw, setRaw] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [view, setView] = useState<ViewMode>(readView);
   const [phIndex, setPhIndex] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    void loadSeals(user.id).then((m) => {
+      if (alive) setSeals(m);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     const id = setTimeout(() => setQuery(raw.trim()), 120);
@@ -148,6 +168,7 @@ export function ConnectionsPage() {
   const results = useMemo(() => (query ? searchConnections(all, query) : null), [all, query]);
   const tokens = useMemo(() => (query ? parseQuery(query).tokens : []), [query]);
   const highlightIds = useMemo(() => (results ? results.map((r) => r.connection.id) : null), [results]);
+  const sealedIds = useMemo(() => new Set(Object.keys(seals).filter((k) => seals[k] === "sealed")), [seals]);
 
   const groups = useMemo(() => {
     const filtered = all.filter((c) => {
@@ -227,7 +248,7 @@ export function ConnectionsPage() {
 
           {view === "graph" ? (
             <Suspense fallback={<PageLoader />}>
-              <BrainGraph connections={all} highlightIds={highlightIds} />
+              <BrainGraph connections={all} highlightIds={highlightIds} sealed={sealedIds} />
             </Suspense>
           ) : results ? (
             results.length === 0 ? (
@@ -238,7 +259,7 @@ export function ConnectionsPage() {
                 <ul className="flex flex-col gap-2">
                   {results.map((r) => (
                     <li key={r.connection.id}>
-                      <PersonRow c={r.connection} reasons={r.reasons} tokens={tokens} />
+                      <PersonRow c={r.connection} reasons={r.reasons} tokens={tokens} seal={seals[r.connection.contact_id]} />
                     </li>
                   ))}
                 </ul>
@@ -302,7 +323,7 @@ export function ConnectionsPage() {
                   <ul className="flex flex-col gap-2">
                     {g.items.map((c) => (
                       <li key={c.id}>
-                        <PersonRow c={c} />
+                        <PersonRow c={c} seal={seals[c.contact_id]} />
                       </li>
                     ))}
                   </ul>

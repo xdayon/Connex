@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Sheet } from "./ui/Sheet";
 import { Avatar } from "./ui/Avatar";
-import { LogoMotion } from "./Logo";
+import { SealPanel } from "./SealPanel";
 import { Button } from "./ui/Button";
 import { Chip } from "./ui/Chip";
 import { TextArea } from "./ui/TextField";
@@ -12,6 +12,7 @@ import { strings } from "../i18n/strings";
 import { supabase } from "../lib/supabase";
 import { profileName, type ConnectionWithContact } from "../lib/types";
 import { useAuth } from "../providers/AuthProvider";
+import { useSeal } from "../lib/useSeal";
 
 export const QUICK_TAGS = ["Builder", "Founder", "Investor", "Designer", "Dev", "Follow up"];
 
@@ -40,6 +41,7 @@ export function ConnectedSheet({ connection, onClose, onSaved, showViewProfile =
   const t = strings.connected;
   const contact = connection?.contact ?? null;
   const name = profileName(contact);
+  const seal = useSeal(connection?.verified ? profile?.id : undefined, connection?.verified ? connection.contact_id : undefined);
 
   const save = async (): Promise<boolean> => {
     if (!connection) return true;
@@ -68,13 +70,20 @@ export function ConnectedSheet({ connection, onClose, onSaved, showViewProfile =
     <Sheet open={!!connection} onClose={() => void done(false)} title={t.title} hideTitle>
       {connection && (
         <div className="-mt-6 flex flex-col items-center text-center">
-          <div className="flex items-center justify-center">
-            <div className="anim-meet-left rounded-full ring-4 ring-surface">
-              <Avatar src={profile?.avatar_url} name={profileName(profile)} size="lg" />
+          {/* Os dois chegam de lados opostos e a linha (lilás de um lado, ciano do outro) se fecha
+              no ponto: o símbolo do conneX desenhado pela própria conexão. */}
+          <div className="relative flex items-center justify-center pt-2">
+            <div aria-hidden className="anim-meet-glow pointer-events-none absolute inset-x-4 top-1/2 h-20 -translate-y-1/2 rounded-full bg-linear-to-r from-lilac/35 to-cyan/35 blur-2xl" />
+            <div className="anim-meet-left relative rounded-full bg-linear-to-br from-lilac to-lilac/30 p-[3px]">
+              <Avatar src={profile?.avatar_url} name={profileName(profile)} size="lg" className="border-[3px] border-surface" />
             </div>
-            <LogoMotion mode="once" size={40} className="relative z-10 mx-1" />
-            <div className="anim-meet-right rounded-full ring-4 ring-surface">
-              <Avatar src={contact?.avatar_url} name={name} size="lg" />
+            <div aria-hidden className="relative mx-1.5 flex w-14 items-center">
+              <span className="anim-link-l h-0.5 flex-1 rounded-full bg-linear-to-r from-lilac/40 to-lilac" />
+              <span className="anim-link-dot mx-0.5 size-2.5 shrink-0 rounded-full bg-text shadow-[0_0_14px_2px_rgba(233,236,245,0.55)]" />
+              <span className="anim-link-r h-0.5 flex-1 rounded-full bg-linear-to-l from-cyan/40 to-cyan" />
+            </div>
+            <div className="anim-meet-right relative rounded-full bg-linear-to-bl from-cyan to-cyan/30 p-[3px]">
+              <Avatar src={contact?.avatar_url} name={name} size="lg" className="border-[3px] border-surface" />
             </div>
           </div>
           <h2 className="anim-pop mt-4 font-display text-2xl font-bold tracking-[-0.02em]">{connection.verified ? t.title : t.titleSaved}</h2>
@@ -88,6 +97,15 @@ export function ConnectedSheet({ connection, onClose, onSaved, showViewProfile =
               </span>
             )}
           </div>
+          {connection.verified && profile && contact && (
+            <SealPanel
+              seal={seal}
+              contactId={connection.contact_id}
+              me={{ name: profileName(profile), avatar: profile.avatar_url }}
+              contact={{ name, avatar: contact.avatar_url }}
+              className="anim-rise mt-5 w-full"
+            />
+          )}
           <div className="mt-5 w-full text-left">
             <TextArea
               label={t.noteLabel}

@@ -11,6 +11,8 @@
     "@solana/wallet-adapter-react": "0.15.40",
     "@solana/web3.js": "1.99.0",
     "@supabase/supabase-js": "2.119.0",
+    "bs58": "6.0.0",
+    "buffer": "6.0.3",
     "d3-force": "3.0.0",
     "hono": "4.13.16",
     "libphonenumber-js": "1.13.15",
@@ -43,6 +45,7 @@
     "typecheck": "tsc -b",
     "deploy": "npm run build && wrangler deploy",
     "cf-typegen": "wrangler types",
-    "generate-pwa-assets": "pwa-assets-generator"
+    "generate-pwa-assets": "pwa-assets-generator",
+    "deploy:dev": "CLOUDFLARE_ENV=dev VITE_SOLANA_NETWORK=devnet npm run build && wrangler deploy"
   }
 }
