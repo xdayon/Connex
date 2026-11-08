@@ -228,7 +228,9 @@ export const strings = {
     reasonLooking: "Looking for",
     graphSummary: (people: number, events: number) =>
       `Your network: ${people} ${people === 1 ? "person" : "people"} across ${events} ${events === 1 ? "event" : "events"}`,
-    fit: "Fit to screen",
+    fit: "Center graph",
+    fullscreen: "Full screen",
+    closeFullscreen: "Close full screen",
     me: "You",
     showing: (name: string, n: number) => `Showing: ${name} (${n} ${n === 1 ? "person" : "people"})`,
     showingMatches: (n: number) => `Showing: search matches (${n})`,
