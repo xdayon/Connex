@@ -3,6 +3,7 @@ export const strings = {
     name: "conneX",
     tagline: "Your smart badge for IRL connections.",
     version: "Version",
+    loading: "Loading",
   },
   common: {
     close: "Close",

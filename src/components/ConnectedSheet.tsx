@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Sheet } from "./ui/Sheet";
 import { Avatar } from "./ui/Avatar";
+import { LogoMotion } from "./Logo";
 import { Button } from "./ui/Button";
 import { Chip } from "./ui/Chip";
 import { TextArea } from "./ui/TextField";
@@ -71,6 +72,7 @@ export function ConnectedSheet({ connection, onClose, onSaved, showViewProfile =
             <div className="anim-meet-left rounded-full ring-4 ring-surface">
               <Avatar src={profile?.avatar_url} name={profileName(profile)} size="lg" />
             </div>
+            <LogoMotion mode="once" size={40} className="relative z-10 mx-1" />
             <div className="anim-meet-right rounded-full ring-4 ring-surface">
               <Avatar src={contact?.avatar_url} name={name} size="lg" />
             </div>

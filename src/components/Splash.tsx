@@ -1,9 +1,10 @@
-import { Logo } from "./Logo";
+import { LogoMotion } from "./Logo";
+import { strings } from "../i18n/strings";
 
 export function Splash() {
   return (
-    <div className="flex min-h-dvh items-center justify-center">
-      <Logo size={64} className="animate-pulse" />
+    <div role="status" aria-label={strings.app.loading} className="flex min-h-dvh items-center justify-center">
+      <LogoMotion size={64} />
     </div>
   );
 }

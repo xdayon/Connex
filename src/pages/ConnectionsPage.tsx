@@ -5,8 +5,8 @@ import { Avatar } from "../components/ui/Avatar";
 import { Button, buttonClass } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Chip } from "../components/ui/Chip";
+import { PageLoader } from "../components/Logo";
 import { EmptyState } from "../components/ui/EmptyState";
-import { Skeleton } from "../components/ui/Skeleton";
 import { VerifiedBadge } from "../components/ui/VerifiedBadge";
 import { strings } from "../i18n/strings";
 import { parseQuery, searchConnections, topSkills, type Reason } from "../lib/brainSearch";
@@ -196,12 +196,7 @@ export function ConnectionsPage() {
       </div>
 
       {loading && !data ? (
-        <div className="flex flex-col gap-3">
-          <Skeleton className="h-14 w-full rounded-2xl" />
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-16 w-full" />
-          ))}
-        </div>
+        <PageLoader />
       ) : error ? (
         <EmptyState icon={Users} title={t.errorTitle} hint={friendlyError(error)} action={<Button onClick={reload}>{strings.common.retry}</Button>} />
       ) : all.length === 0 ? (
@@ -231,7 +226,7 @@ export function ConnectionsPage() {
           </div>
 
           {view === "graph" ? (
-            <Suspense fallback={<Skeleton className="h-[60vh] w-full" />}>
+            <Suspense fallback={<PageLoader />}>
               <BrainGraph connections={all} highlightIds={highlightIds} />
             </Suspense>
           ) : results ? (

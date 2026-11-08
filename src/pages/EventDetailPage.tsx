@@ -232,7 +232,7 @@ export function EventDetailPage() {
                 <p className="text-xs font-semibold uppercase tracking-widest text-muted">{t.code}</p>
                 <p className="font-mono text-4xl font-bold tracking-[0.25em] text-cyan">{event.join_code}</p>
                 <div className="rounded-3xl bg-white p-2">
-                  <QRCode value={link} size={200} label={t.qrHint} />
+                  <QRCode value={link} size={200} label={t.qrHint} withLogo />
                 </div>
                 <p className="text-sm text-muted">{t.qrHint}</p>
                 <div className="flex w-full gap-3">

@@ -3,9 +3,9 @@ import { Link, useNavigate } from "react-router";
 import { Calendar, ChevronRight, KeyRound, MapPin, Plus } from "lucide-react";
 import { Button, buttonClass } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
+import { PageLoader } from "../components/Logo";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Sheet } from "../components/ui/Sheet";
-import { Skeleton } from "../components/ui/Skeleton";
 import { TextArea, TextField } from "../components/ui/TextField";
 import { useToast } from "../components/ui/Toast";
 import { strings } from "../i18n/strings";
@@ -139,10 +139,7 @@ export function EventsPage() {
       </div>
 
       {loading ? (
-        <div className="flex flex-col gap-3">
-          <Skeleton className="h-20" />
-          <Skeleton className="h-20" />
-        </div>
+        <PageLoader />
       ) : loadError ? (
         <EmptyState icon={Calendar} title={t.errorTitle} hint={friendlyError(loadError)} action={<Button onClick={reload}>{strings.common.retry}</Button>} />
       ) : (

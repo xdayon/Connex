@@ -23,6 +23,33 @@ export function Logo({ size = 32, withBackground = false, className }: LogoProps
   );
 }
 
+// Símbolo animado. "loop": as flechas se encontram e somem, repetindo (carregamento).
+// "once": se encontram uma vez e ficam (momento da conexão).
+export function LogoMotion({ size = 56, mode = "loop", className = "" }: { size?: number; mode?: "loop" | "once"; className?: string }) {
+  return (
+    <svg
+      viewBox="88 106 336 300"
+      width={size}
+      height={(size * 300) / 336}
+      className={`${mode === "loop" ? "lm-loop" : "lm-once"} overflow-visible ${className}`}
+      aria-hidden
+    >
+      <path className="lm-l" d="M128 146 L194 256 L128 366" fill="none" stroke="#C77DFF" strokeWidth="60" strokeLinecap="round" strokeLinejoin="round" />
+      <path className="lm-r" d="M384 146 L318 256 L384 366" fill="none" stroke="#00F0FF" strokeWidth="60" strokeLinecap="round" strokeLinejoin="round" />
+      <circle className="lm-dot" cx="256" cy="256" r="18" fill="#E9ECF5" />
+    </svg>
+  );
+}
+
+// Carregamento de tela: símbolo animado no centro, só aparece se a espera passar de 150 ms.
+export function PageLoader() {
+  return (
+    <div role="status" aria-label={strings.app.loading} className="lm-delayed flex min-h-[50dvh] items-center justify-center">
+      <LogoMotion size={48} />
+    </div>
+  );
+}
+
 // Nome escrito, sem o símbolo: os dois nunca aparecem juntos (o símbolo já é um X).
 // Geist 600 com o X maior, em ciano, centralizado na altura das minúsculas.
 export function Wordmark({ textClassName = "text-[22px]" }: { textClassName?: string }) {
