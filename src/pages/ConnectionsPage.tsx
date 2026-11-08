@@ -19,7 +19,8 @@ import { useAsync } from "../lib/useAsync";
 const BrainGraph = lazy(() => import("../components/BrainGraph").then((m) => ({ default: m.BrainGraph })));
 
 type ViewMode = "list" | "graph";
-const VIEW_KEY = "connex.brain.view";
+// v2: o padrão passou a ser o grafo; a chave nova faz todo mundo começar por ele.
+const VIEW_KEY = "connex.brain.view.v2";
 
 function readView(): ViewMode {
   try {

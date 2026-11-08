@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Link, NavLink, Outlet } from "react-router";
+import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { Brain, Calendar, QrCode, ScanLine, User, type LucideIcon } from "lucide-react";
 import { strings } from "../i18n/strings";
 import { useCurrentEventId } from "../lib/currentEvent";
@@ -37,6 +37,7 @@ function EventChip() {
 }
 
 export function AppShell() {
+  const { pathname } = useLocation();
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-120 flex-col">
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-ink/85 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur">
@@ -45,7 +46,10 @@ export function AppShell() {
       </header>
       <main className="flex-1 px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4">
         <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-          <Outlet />
+          {/* key: cada troca de tela reinicia a entrada suave. */}
+          <div key={pathname} className="anim-page">
+            <Outlet />
+          </div>
         </Suspense>
       </main>
       <nav
@@ -64,11 +68,21 @@ export function AppShell() {
                   className={({ isActive }) =>
                     center
                       ? `-mt-6 mb-2 flex size-14 items-center justify-center rounded-full bg-cyan text-ink shadow-[0_0_0_4px_var(--color-ink)] transition active:scale-95 ${isActive ? "ring-2 ring-text" : ""}`
-                      : `flex h-16 w-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition ${isActive ? "text-cyan" : "text-muted"}`
+                      : `group relative flex h-16 w-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors duration-200 ${isActive ? "text-cyan" : "text-muted"}`
                   }
                 >
-                  <Icon size={center ? 26 : 22} />
-                  {!center && <span>{label}</span>}
+                  {({ isActive }) => (
+                    <>
+                      {!center && (
+                        <span
+                          aria-hidden
+                          className={`absolute top-0 h-0.5 w-8 rounded-full bg-cyan shadow-[0_0_10px_var(--color-cyan)] transition-[opacity,transform] duration-300 ease-out ${isActive ? "scale-x-100 opacity-100" : "scale-x-0 opacity-0"}`}
+                        />
+                      )}
+                      <Icon size={center ? 26 : 22} className={center ? "" : "transition-transform duration-150 group-active:scale-90"} />
+                      {!center && <span>{label}</span>}
+                    </>
+                  )}
                 </NavLink>
               </li>
             );

@@ -10,8 +10,8 @@
   --color-line: #252b40;
   --color-text: #e8ecf6;
   --color-muted: #8890a8;
-  --color-cyan: #00e1ff;
-  --color-lilac: #a77bff;
+  --color-cyan: #00f0ff;
+  --color-lilac: #c77dff;
   --color-danger: #ff6b8a;
 
   --font-display: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
@@ -148,6 +148,37 @@ select {
   }
 }
 
+@keyframes page-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-down {
+  from {
+    transform: none;
+    opacity: 1;
+  }
+  to {
+    transform: translateY(32px);
+    opacity: 0;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes reveal {
   from {
     transform: translateY(-4px);
@@ -159,11 +190,22 @@ select {
   }
 }
 
+/* Sem fill-mode: ao terminar não sobra transform, então elementos fixed dentro da página
+   (barra de salvar, grafo em tela cheia) continuam presos à tela. */
+.anim-page {
+  animation: page-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.anim-sheet-out {
+  animation: sheet-down 180ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+.anim-fade-out {
+  animation: fade-out 180ms ease-in forwards;
+}
 .anim-reveal {
   animation: reveal 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .anim-sheet {
-  animation: sheet-up 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: sheet-up 280ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .anim-fade {
   animation: fade-in 180ms ease-out;

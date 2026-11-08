@@ -16,8 +16,8 @@ export function Logo({ size = 32, withBackground = false, className }: LogoProps
       aria-label={strings.app.name}
     >
       {withBackground && <rect width="512" height="512" fill="#0A0D16" />}
-      <path d="M128 146 L194 256 L128 366" fill="none" stroke="#A77BFF" strokeWidth="60" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M384 146 L318 256 L384 366" fill="none" stroke="#00E1FF" strokeWidth="60" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M128 146 L194 256 L128 366" fill="none" stroke="#C77DFF" strokeWidth="60" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M384 146 L318 256 L384 366" fill="none" stroke="#00F0FF" strokeWidth="60" strokeLinecap="round" strokeLinejoin="round" />
       <circle cx="256" cy="256" r="18" fill="#E9ECF5" />
     </svg>
   );
@@ -28,7 +28,7 @@ export function Wordmark({ size = 28 }: { size?: number }) {
     <span className="inline-flex items-center gap-2">
       <Logo size={size} />
       <span className="font-mono text-lg font-semibold tracking-[-0.04em] text-text">
-        conne<span className="text-cyan">x</span>
+        conne<span className="text-cyan [text-shadow:0_0_10px_color-mix(in_srgb,var(--color-cyan)_70%,transparent)]">x</span>
       </span>
     </span>
   );

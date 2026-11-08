@@ -22,7 +22,7 @@ export async function renderAvatar(bitmap: ImageBitmap, crop: AvatarCrop): Promi
   canvas.height = OUTPUT;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas unavailable");
-  ctx.fillStyle = "#12141e";
+  ctx.fillStyle = "#0a0d16";
   ctx.fillRect(0, 0, OUTPUT, OUTPUT);
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(bitmap, crop.x, crop.y, crop.size, crop.size, 0, 0, OUTPUT, OUTPUT);
