@@ -23,9 +23,9 @@ const VIEW_KEY = "connex.brain.view";
 
 function readView(): ViewMode {
   try {
-    return localStorage.getItem(VIEW_KEY) === "graph" ? "graph" : "list";
+    return localStorage.getItem(VIEW_KEY) === "list" ? "list" : "graph";
   } catch {
-    return "list";
+    return "graph";
   }
 }
 
@@ -178,7 +178,7 @@ export function ConnectionsPage() {
         </div>
         {hasData && !error && all.length > 0 && (
           <div role="group" aria-label={b.viewLabel} className="flex shrink-0 rounded-full border border-line bg-surface-2 p-0.5">
-            {(["list", "graph"] as const).map((v) => (
+            {(["graph", "list"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
