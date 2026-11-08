@@ -3,11 +3,20 @@ import { Plus } from "lucide-react";
 import { strings } from "../i18n/strings";
 import { Chip } from "./ui/Chip";
 
-type Props = { label: string; items: string[]; onChange: (items: string[]) => void; maxItems: number; maxLength: number; placeholder: string };
+type Props = {
+  label: string;
+  items: string[];
+  onChange: (items: string[]) => void;
+  maxItems: number;
+  maxLength: number;
+  placeholder: string;
+  suggestions?: readonly string[];
+};
 
-export function ChipEditor({ label, items, onChange, maxItems, maxLength, placeholder }: Props) {
+export function ChipEditor({ label, items, onChange, maxItems, maxLength, placeholder, suggestions }: Props) {
   const [draft, setDraft] = useState("");
   const full = items.length >= maxItems;
+  const left = (suggestions ?? []).filter((s) => !items.some((i) => i.toLowerCase() === s.toLowerCase()));
 
   const add = (e: FormEvent) => {
     e.preventDefault();
@@ -56,6 +65,15 @@ export function ChipEditor({ label, items, onChange, maxItems, maxLength, placeh
           <Plus size={18} aria-hidden />
         </button>
       </form>
+      {!full && left.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {left.map((s) => (
+            <Chip key={s} onClick={() => onChange([...items, s])} className="px-2.5 text-xs">
+              + {s}
+            </Chip>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

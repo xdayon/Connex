@@ -4,8 +4,7 @@ import { LINK_KEYS, SHARE_KEYS, type Profile, type ShareKey } from "./types";
 export function availableKeys(profile: Profile | null): ShareKey[] {
   if (!profile) return [];
   const keys: ShareKey[] = LINK_KEYS.filter((k) => !!profile.links?.[k]);
-  if (profile.wallet) keys.push("wallet");
-  return keys;
+  return profile.wallet ? ["wallet", ...keys] : keys;
 }
 
 export type ShareSelection = {

@@ -46,3 +46,15 @@ export function suggestHandle(name: string): string {
     .replace(/^_+|_+$/g, "")
     .slice(0, 20);
 }
+
+type BirthParts = { birth_day: number | null; birth_month: number | null; birth_year: number | null };
+
+export function hasBirthday(p: BirthParts | null | undefined): boolean {
+  return !!p && (p.birth_day != null || p.birth_month != null || p.birth_year != null);
+}
+
+// Mostra só o que existe: "12 March 1990", "12 March", "March 1990", "1990", "March".
+export function formatBirthday(p: BirthParts): string {
+  const month = p.birth_month != null ? new Date(2000, p.birth_month - 1, 1).toLocaleDateString("en", { month: "long" }) : null;
+  return [p.birth_day, month, p.birth_year].filter((x) => x != null).join(" ");
+}

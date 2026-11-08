@@ -12,7 +12,7 @@ import { getCurrentEventId } from "../lib/currentEvent";
 import { friendlyError, isMessage } from "../lib/errors";
 import { saveIntent } from "../lib/intent";
 import { supabase } from "../lib/supabase";
-import type { Connection, Profile } from "../lib/types";
+import type { Connection, Links, Profile } from "../lib/types";
 import { useAsync } from "../lib/useAsync";
 import { downloadVCard } from "../lib/vcard";
 import { useAuth } from "../providers/AuthProvider";
@@ -42,6 +42,7 @@ export function PublicProfilePage() {
   }, [data]);
 
   const isSelf = !!me && !!data && me.id === data.id;
+  const preview = isSelf && params.get("preview") === "1";
 
   const connect = async () => {
     if (!data?.handle) return;
@@ -110,8 +111,20 @@ export function PublicProfilePage() {
     );
   }
 
+  // Na prévia, o dono vê só o que um visitante veria: some o que está desligado no compartilhamento.
+  const hiddenKeys: string[] = preview ? (data.share_hidden ?? []) : [];
+  const links = Object.fromEntries(Object.entries(data.links ?? {}).filter(([k]) => !hiddenKeys.includes(k))) as Links;
+
   return (
     <article className="flex flex-col gap-5">
+      {preview && (
+        <div className="flex items-center justify-between gap-3 rounded-card border border-cyan/40 bg-cyan/10 p-3 text-sm">
+          <span className="min-w-0 font-medium">{strings.me.previewBanner}</span>
+          <Link to="/me" className="inline-flex min-h-11 shrink-0 items-center font-semibold text-cyan underline-offset-4 hover:underline">
+            {strings.me.backToEditing}
+          </Link>
+        </div>
+      )}
       <Card className="p-5">
         <ProfileHeader profile={data} />
       </Card>
@@ -126,11 +139,11 @@ export function PublicProfilePage() {
               {strings.auth.signInToConnect}
             </Button>
           ))}
-        <Button variant="secondary" full onClick={() => downloadVCard(data, data.links)} icon={<Download size={18} aria-hidden />}>
+        <Button variant="secondary" full onClick={() => downloadVCard(data, links)} icon={<Download size={18} aria-hidden />}>
           {strings.publicProfile.saveContact}
         </Button>
       </div>
-      <LinkButtons links={data.links} />
+      <LinkButtons links={links} />
       <ProfileExtras profile={data} />
     </article>
   );

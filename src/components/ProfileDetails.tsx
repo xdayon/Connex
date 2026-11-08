@@ -1,10 +1,10 @@
-import { Building2, Copy, ExternalLink, MapPin } from "lucide-react";
+import { Building2, Cake, Copy, ExternalLink, MapPin } from "lucide-react";
 import { BrandIcon } from "./BrandIcon";
 import { Chip } from "./ui/Chip";
 import { Avatar } from "./ui/Avatar";
 import { useToast } from "./ui/Toast";
 import { strings } from "../i18n/strings";
-import { shortAddress } from "../lib/format";
+import { formatBirthday, hasBirthday, shortAddress } from "../lib/format";
 import { copyText } from "../lib/clipboard";
 import { isUrl, linkEntries, safeHttps } from "../lib/links";
 import { profileName, type ContactProfile, type Links } from "../lib/types";
@@ -34,6 +34,12 @@ export function ProfileHeader({ profile }: { profile: ContactProfile }) {
               {profile.location}
             </span>
           )}
+        </p>
+      )}
+      {hasBirthday(profile) && (
+        <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted">
+          <Cake size={14} aria-hidden />
+          {formatBirthday(profile)}
         </p>
       )}
       {profile.bio && <p className="mt-4 max-w-96 whitespace-pre-line break-words text-left text-sm text-text/90">{profile.bio}</p>}

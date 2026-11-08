@@ -1,13 +1,14 @@
-// Mesma ordem e mesmas chaves de private.link_keys() no banco.
+// Mesmo conjunto de chaves de private.link_keys() no banco; aqui a ordem só vale para exibição.
+// As 6 primeiras são as redes principais; o resto fica em "More networks".
 export const LINK_KEYS = [
-  "whatsapp", "telegram", "x", "instagram", "linkedin", "github", "farcaster", "discord",
-  "superteam", "website", "calendar", "youtube", "tiktok", "twitch", "steam", "reddit", "bluesky",
+  "telegram", "x", "github", "linkedin", "whatsapp", "instagram", "farcaster", "discord",
+  "superteam", "bluesky", "website", "calendar", "youtube", "reddit", "twitch", "steam", "tiktok",
 ] as const;
 export type LinkKey = (typeof LINK_KEYS)[number];
 export type Links = Partial<Record<LinkKey, string>>;
 
 // O que dá para compartilhar com alguém: as redes e a carteira (private.share_keys()).
-export const SHARE_KEYS = [...LINK_KEYS, "wallet"] as const;
+export const SHARE_KEYS = ["wallet", ...LINK_KEYS] as const;
 export type ShareKey = (typeof SHARE_KEYS)[number];
 
 // Perfil completo: só o próprio dono recebe assim (rpc my_profile / ensure_profile).
@@ -22,6 +23,9 @@ export type Profile = {
   avatar_url: string | null;
   company: string | null;
   location: string | null;
+  birth_day: number | null;
+  birth_month: number | null;
+  birth_year: number | null;
   links: Links;
   share_hidden: ShareKey[];
   skills: string[];
@@ -83,7 +87,7 @@ export type Connection = {
 // Perfil de outra pessoa lido direto da tabela: sem links, carteira e padrão (o banco nega essas colunas).
 export type ContactProfile = Omit<Profile, "links" | "wallet" | "share_hidden">;
 export const PROFILE_COLS =
-  "id,handle,display_name,headline,bio,avatar_url,company,location,skills,looking_for,offering,is_public,skr_name,seeker_verified,created_at,updated_at";
+  "id,handle,display_name,headline,bio,avatar_url,company,location,birth_day,birth_month,birth_year,skills,looking_for,offering,is_public,skr_name,seeker_verified,created_at,updated_at";
 
 export type ConnectionWithContact = Connection & {
   contact: ContactProfile | null;

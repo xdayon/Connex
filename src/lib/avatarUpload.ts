@@ -1,4 +1,4 @@
-import { prepareAvatar } from "./avatar";
+import type { PreparedAvatar } from "./avatar";
 import { supabase } from "./supabase";
 
 const BUCKET = "avatars";
@@ -10,8 +10,8 @@ function pathFromUrl(url: string | null | undefined): string | null {
   return i === -1 ? null : decodeURIComponent(url.slice(i + marker.length).split("?")[0]);
 }
 
-export async function uploadAvatar(uid: string, file: File, previousUrl?: string | null): Promise<string> {
-  const { blob, ext, type } = await prepareAvatar(file);
+export async function uploadAvatar(uid: string, prepared: PreparedAvatar, previousUrl?: string | null): Promise<string> {
+  const { blob, ext, type } = prepared;
   const path = `${uid}/avatar-${Date.now()}.${ext}`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, blob, { contentType: type, cacheControl: "31536000", upsert: false });
   if (error) throw error;
