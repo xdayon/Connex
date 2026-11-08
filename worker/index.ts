@@ -16,6 +16,7 @@ type Bindings = Env & Secrets;
 
 const PUBLIC_RPC = { devnet: "https://api.devnet.solana.com", mainnet: "https://api.mainnet-beta.solana.com" } as const;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const BASE58_SIG = /^[1-9A-HJ-NP-Za-km-z]{64,90}$/;
 
 type Proof = {
   id: string;
@@ -187,6 +188,59 @@ app.post("/proofs/submit", async (c) => {
     await new Promise((r) => setTimeout(r, 1000));
   }
   throw new HttpError(502, "not confirmed in time");
+});
+
+type ParsedTx = {
+  meta: { err: unknown } | null;
+  transaction: {
+    message: {
+      accountKeys: { pubkey: string; signer: boolean }[];
+      instructions: { program?: string; parsed?: { type?: string; info?: { source?: string; destination?: string; lamports?: number } } }[];
+    };
+  };
+};
+
+// Registra uma gorjeta: confere na rede que a transferência de SOL existe e deu certo,
+// e só então grava no banco (como quem enviou) para o destinatário ser avisado.
+//    body: { signature, to } com a assinatura da transação (base58) e o id de quem recebeu.
+app.post("/tips/record", async (c) => {
+  const jwt = c.req.header("authorization")?.replace(/^Bearer\s+/i, "");
+  if (!jwt) throw new HttpError(401, "login required");
+  const body = (await c.req.json().catch(() => null)) as { signature?: string; to?: string } | null;
+  if (!body || !BASE58_SIG.test(body.signature ?? "") || !UUID.test(body.to ?? "")) throw new HttpError(400, "invalid request");
+  const secret = serverSecret(c.env);
+  const signature = body.signature as string;
+
+  let tx: ParsedTx | null = null;
+  for (let i = 0; i < 6; i++) {
+    tx = await rpc<ParsedTx | null>(c.env, "getTransaction", [
+      signature,
+      { encoding: "jsonParsed", commitment: "confirmed", maxSupportedTransactionVersion: 0 },
+    ]);
+    if (tx) break;
+    if (i < 5) await new Promise((r) => setTimeout(r, 1000));
+  }
+  if (!tx || !tx.meta || tx.meta.err !== null) throw new HttpError(400, "no transfer");
+  const ix = tx.transaction.message.instructions.find((i) => i.program === "system" && i.parsed?.type === "transfer");
+  const info = ix?.parsed?.info;
+  if (!info?.source || !info.destination || typeof info.lamports !== "number") throw new HttpError(400, "no transfer");
+  if (!tx.transaction.message.accountKeys.some((k) => k.signer && k.pubkey === info.source)) throw new HttpError(400, "no transfer");
+
+  const tip = await db(
+    c.env,
+    "tip_record",
+    {
+      p_secret: secret,
+      p_cluster: c.env.SOLANA_CLUSTER,
+      p_signature: signature,
+      p_to_user: body.to,
+      p_from_wallet: info.source,
+      p_to_wallet: info.destination,
+      p_lamports: info.lamports,
+    },
+    jwt,
+  );
+  return c.json({ tip });
 });
 
 export default app;
