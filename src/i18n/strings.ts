@@ -399,6 +399,8 @@ export const strings = {
     open: "Open",
     organizerHint: "You'll get a code and a QR to put at the entrance.",
     whosHere: (n: number) => `Who's here (${n})`,
+    brainMet: (n: number) => `In your network (${n})`,
+    brainNotMet: (n: number) => `Not met yet (${n})`,
     matches: "Matches for you",
     everyone: "Everyone",
     noMatches: "No matches yet",

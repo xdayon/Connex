@@ -11,7 +11,7 @@ import { SealedBadge } from "./ui/SealedBadge";
 import { VerifiedBadge } from "./ui/VerifiedBadge";
 import { relativeDate } from "../lib/format";
 
-type NodeType = "me" | "event" | "person" | "skill";
+type NodeType = "me" | "event" | "person" | "skill" | "stranger";
 
 type GraphNode = SimulationNodeDatum & {
   id: string;
@@ -20,8 +20,13 @@ type GraphNode = SimulationNodeDatum & {
   label: string;
   avatar?: string | null;
   verified?: boolean;
+  // Pessoa: id do contato (para saber se o selo fechou).
+  contactId?: string;
   w?: number;
 };
+
+// Pessoa presente (num evento) que ainda não está na sua rede: aparece solta, num anel de fora.
+export type Stranger = { id: string; name: string; avatar: string | null };
 
 type GraphLink = SimulationLinkDatum<GraphNode> & {
   kind: "me-event" | "event-person" | "me-person" | "person-skill";
@@ -38,13 +43,20 @@ type Layout = {
 const MAX_SKILLS = 12;
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
-const NAMES_ZOOM = 1.15;
+// Nomes: tamanho fixo na tela (não crescem com o zoom). Um nome só aparece se não encostar em
+// outro nome nem em outra bolha; quem tem prioridade ganha a vaga. Com o zoom, sobra espaço e
+// aparecem mais nomes. Abaixo deste tamanho de bolha na tela, nenhum nome aparece.
+const LABEL_FONT = 11;
+const LABEL_CHAR_W = 6.7;
+const LABEL_H = 15;
+const LABEL_MIN_NODE_PX = 7;
+const LABEL_CHARS = 16;
 
 function truncate(s: string, n: number): string {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }
 
-function buildLayout(connections: ConnectionWithContact[], me: { name: string; avatar: string | null }): Layout {
+function buildLayout(connections: ConnectionWithContact[], me: { name: string; avatar: string | null }, strangers: Stranger[]): Layout {
   const nodes: GraphNode[] = [
     {
       id: "me",
@@ -86,6 +98,7 @@ function buildLayout(connections: ConnectionWithContact[], me: { name: string; a
       label: profileName(c.contact),
       avatar: c.contact?.avatar_url,
       verified: c.verified,
+      contactId: c.contact_id,
     });
     links.push(
       c.event
@@ -126,6 +139,15 @@ function buildLayout(connections: ConnectionWithContact[], me: { name: string; a
     for (const p of v.people) links.push({ source: `s:${key}`, target: p, kind: "person-skill" });
   }
 
+  for (const st of strangers) {
+    add({ id: `x:${st.id}`, type: "stranger", r: 13, label: st.name, avatar: st.avatar });
+  }
+  // Anel de quem você ainda não conhece: logo depois do miolo (você, eventos e conexões) e largo
+  // o bastante para as bolhas caberem lado a lado. Anel grande demais encolhe o grafo inteiro.
+  const hasEvents = nodes.some((n) => n.type === "event");
+  const inner = connections.length === 0 ? 40 : hasEvents ? 200 : 110;
+  const strangerRing = Math.max(inner + 80, (strangers.length * 38) / (2 * Math.PI));
+
   const sim = forceSimulation(nodes)
     .force(
       "link",
@@ -136,7 +158,7 @@ function buildLayout(connections: ConnectionWithContact[], me: { name: string; a
     )
     .force(
       "charge",
-      forceManyBody<GraphNode>().strength((d) => (d.type === "event" ? -260 : d.type === "skill" ? -30 : -70)),
+      forceManyBody<GraphNode>().strength((d) => (d.type === "event" ? -260 : d.type === "skill" ? -30 : d.type === "stranger" ? -45 : -70)),
     )
     .force(
       "collide",
@@ -144,7 +166,9 @@ function buildLayout(connections: ConnectionWithContact[], me: { name: string; a
     )
     .force(
       "radial",
-      forceRadial<GraphNode>(230, 0, 0).strength((d) => (d.type === "skill" ? 0.06 : 0)),
+      forceRadial<GraphNode>((d) => (d.type === "stranger" ? strangerRing : 230), 0, 0).strength((d) =>
+        d.type === "skill" ? 0.06 : d.type === "stranger" ? 0.18 : 0,
+      ),
     )
     .stop();
   for (let i = 0; i < 300; i++) sim.tick();
@@ -174,6 +198,44 @@ function buildLayout(connections: ConnectionWithContact[], me: { name: string; a
 
 type View = { x: number; y: number; k: number };
 
+type Box = [number, number, number, number];
+const overlaps = (a: Box, b: Box) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+
+// Escolhe quais nomes cabem na tela neste zoom (k). Tudo em pixels de tela, sem o deslocamento
+// (que não muda quem encosta em quem). `order` já vem do mais importante para o menos.
+function placeLabels(layout: Layout, k: number, order: GraphNode[]): Set<string> {
+  const shown = new Set<string>();
+  const obstacles: { id: string; box: Box }[] = [];
+  for (const n of layout.nodes) {
+    const x = (n.x ?? 0) * k;
+    const y = (n.y ?? 0) * k;
+    if (n.type === "event") {
+      const hw = ((n.w ?? 60) / 2) * k;
+      obstacles.push({ id: n.id, box: [x - hw, y - n.r * k, x + hw, y + n.r * k] });
+    } else if (n.type === "skill") {
+      // O nome da habilidade cresce com o zoom (fica dentro do grupo escalado).
+      const hw = (truncate(n.label, 14).length * 3 + 2) * k;
+      obstacles.push({ id: n.id, box: [x - hw, y - 20 * k, x + hw, y + n.r * k] });
+    } else {
+      const r = (n.r + 2) * k;
+      obstacles.push({ id: n.id, box: [x - r, y - r, x + r, y + r] });
+    }
+  }
+  const placed: Box[] = [];
+  for (const n of order) {
+    if (n.r * k < LABEL_MIN_NODE_PX) continue;
+    const x = (n.x ?? 0) * k;
+    const top = (n.y ?? 0) * k + (n.r + 2) * k + 1;
+    const hw = (truncate(n.label, LABEL_CHARS).length * LABEL_CHAR_W) / 2 + 2;
+    const box: Box = [x - hw, top, x + hw, top + LABEL_H];
+    if (placed.some((b) => overlaps(b, box))) continue;
+    if (obstacles.some((o) => o.id !== n.id && overlaps(o.box, box))) continue;
+    placed.push(box);
+    shown.add(n.id);
+  }
+  return shown;
+}
+
 const btnClass =
   "inline-flex size-11 items-center justify-center rounded-full border border-line bg-surface-2/90 text-text backdrop-blur transition active:scale-95";
 
@@ -182,9 +244,14 @@ type Props = {
   highlightIds?: string[] | null;
   // Ids dos contatos com selo de encontro confirmado dos dois lados.
   sealed?: Set<string>;
+  // Brain do evento: quem está lá e você ainda não conhece; tocar chama onStranger.
+  strangers?: Stranger[];
+  onStranger?: (id: string) => void;
 };
 
-export function BrainGraph({ connections, highlightIds = null, sealed }: Props) {
+const NO_STRANGERS: Stranger[] = [];
+
+export function BrainGraph({ connections, highlightIds = null, sealed, strangers = NO_STRANGERS, onStranger }: Props) {
   const t = strings.brain;
   const navigate = useNavigate();
   const { profile } = useAuth();
@@ -192,7 +259,7 @@ export function BrainGraph({ connections, highlightIds = null, sealed }: Props) 
   const meName = profile ? profileName(profile) : t.me;
   const meAvatar = profile?.avatar_url ?? null;
 
-  const layout = useMemo(() => buildLayout(connections, { name: meName, avatar: meAvatar }), [connections, meName, meAvatar]);
+  const layout = useMemo(() => buildLayout(connections, { name: meName, avatar: meAvatar }, strangers), [connections, meName, meAvatar, strangers]);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -203,22 +270,26 @@ export function BrainGraph({ connections, highlightIds = null, sealed }: Props) 
   const [focus, setFocus] = useState<string | null>(null);
   // Pessoa tocada no grafo: mostra o cartão resumido antes de abrir o perfil completo.
   const [peek, setPeek] = useState<string | null>(null);
-  const [names, setNames] = useState(false);
   const [full, setFull] = useState(false);
-  const fitK = useRef(1);
-  const namesOn = useRef(false);
+  // Nomes visíveis agora; recalculados quando o zoom muda (o arrastar não muda nada).
+  const [labels, setLabels] = useState<Set<string>>(() => new Set());
+  const labelK = useRef(0);
+  const labelOrder = useRef<GraphNode[]>([]);
   const nativeFull = useRef(false);
   // Toque numa pessoa em tela cheia: fecha primeiro (desfaz a entrada no histórico) e só depois navega.
   const pendingNav = useRef<string | null>(null);
 
-  // só vira estado React ao cruzar o limiar de zoom; o pan/zoom segue via setAttribute
-  const syncNames = useCallback(() => {
-    const on = view.current.k >= fitK.current * NAMES_ZOOM;
-    if (on !== namesOn.current) {
-      namesOn.current = on;
-      setNames(on);
-    }
-  }, []);
+  // O pan/zoom segue via setAttribute; os nomes só viram estado React quando o conjunto muda.
+  const syncLabels = useCallback(
+    (force = false) => {
+      const k = view.current.k;
+      if (!force && labelK.current && Math.abs(k / labelK.current - 1) < 0.04) return;
+      labelK.current = k;
+      const next = placeLabels(layout, k, labelOrder.current);
+      setLabels((prev) => (prev.size === next.size && [...next].every((id) => prev.has(id)) ? prev : next));
+    },
+    [layout],
+  );
 
   const paint = useCallback(() => {
     if (raf.current) return;
@@ -226,9 +297,11 @@ export function BrainGraph({ connections, highlightIds = null, sealed }: Props) 
       raf.current = 0;
       const { x, y, k } = view.current;
       gRef.current?.setAttribute("transform", `translate(${x} ${y}) scale(${k})`);
-      syncNames();
+      // Os nomes desfazem a escala do grupo para manter o tamanho na tela.
+      gRef.current?.style.setProperty("--ik", String(1 / k));
+      syncLabels();
     });
-  }, [syncNames]);
+  }, [syncLabels]);
 
   const fit = useCallback(() => {
     if (!size.w || !size.h) return;
@@ -243,12 +316,18 @@ export function BrainGraph({ connections, highlightIds = null, sealed }: Props) 
       minY = Math.min(minY, (n.y ?? 0) - n.r - 6);
       maxY = Math.max(maxY, (n.y ?? 0) + n.r + 6);
     }
-    const k = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.min(size.w / (maxX - minX), size.h / (maxY - minY)) * 0.92));
-    fitK.current = k;
+    // Margem em pixels de tela para os nomes (tamanho fixo) não serem cortados nas bordas:
+    // meia largura de um nome dos lados e a altura de um nome embaixo.
+    const padX = Math.min(60, size.w * 0.15);
+    const padTop = 12;
+    const padBottom = LABEL_H + 12;
+    const availW = Math.max(40, size.w - 2 * padX);
+    const availH = Math.max(40, size.h - padTop - padBottom);
+    const k = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.min(availW / (maxX - minX), availH / (maxY - minY))));
     view.current = {
       k,
-      x: size.w / 2 - ((minX + maxX) / 2) * k,
-      y: size.h / 2 - ((minY + maxY) / 2) * k,
+      x: padX + availW / 2 - ((minX + maxX) / 2) * k,
+      y: padTop + availH / 2 - ((minY + maxY) / 2) * k,
     };
     paint();
   }, [layout, size, paint]);
@@ -268,6 +347,7 @@ export function BrainGraph({ connections, highlightIds = null, sealed }: Props) 
     if (gRef.current) {
       const { x, y, k } = view.current;
       gRef.current.setAttribute("transform", `translate(${x} ${y}) scale(${k})`);
+      gRef.current.style.setProperty("--ik", String(1 / k));
     }
   }, [fit]);
 
@@ -427,6 +507,8 @@ export function BrainGraph({ connections, highlightIds = null, sealed }: Props) 
         setPeek(id);
         setFocus(n.id);
       }
+    } else if (n.type === "stranger") {
+      onStranger?.(n.id.slice(2));
     } else if (n.type === "event" || n.type === "skill") {
       setPeek(null);
       setFocus((f) => (f === n.id ? null : n.id));
@@ -444,6 +526,26 @@ export function BrainGraph({ connections, highlightIds = null, sealed }: Props) 
   }, [highlightIds]);
   const active = focusNode ? (layout.neighbors.get(focusNode.id) ?? new Set([focusNode.id])) : searchSet;
   const dim = (id: string) => (active && !active.has(id) ? 0.15 : 1);
+
+  // Quem ganha a vaga do nome primeiro: a pessoa aberta no resumo, quem selou, quem foi
+  // verificado, conexões antes de desconhecidos, e quem tem mais ligações. Com foco ou busca,
+  // só os destacados disputam.
+  const labelPriority = useMemo(() => {
+    const score = (n: GraphNode) =>
+      (peek && n.id === `p:${peek}` ? 1000 : 0) +
+      (n.contactId && sealed?.has(n.contactId) ? 100 : 0) +
+      (n.verified ? 50 : 0) +
+      (n.type === "person" ? 20 : 0) +
+      (layout.neighbors.get(n.id)?.size ?? 0);
+    return layout.nodes
+      .filter((n) => (n.type === "person" || n.type === "stranger") && (!active || active.has(n.id)))
+      .sort((a, b) => score(b) - score(a) || a.label.localeCompare(b.label));
+  }, [layout, active, peek, sealed]);
+
+  useLayoutEffect(() => {
+    labelOrder.current = labelPriority;
+    syncLabels(true);
+  }, [labelPriority, syncLabels]);
 
   const focusPeople = focusNode ? [...(layout.neighbors.get(focusNode.id) ?? [])].filter((id) => id.startsWith("p:")).length : 0;
   const chip = focusNode ? t.showing(focusNode.label, focusPeople) : searchSet ? t.showingMatches(searchSet.size - 1) : null;
@@ -561,6 +663,7 @@ export function BrainGraph({ connections, highlightIds = null, sealed }: Props) 
                 );
               }
               const isMe = n.type === "me";
+              const stranger = n.type === "stranger";
               return (
                 <g
                   key={n.id}
@@ -568,15 +671,17 @@ export function BrainGraph({ connections, highlightIds = null, sealed }: Props) 
                   transform={`translate(${x} ${y})`}
                   onClick={() => tapNode(n)}
                   className={`${common.className} ${isMe ? "" : "cursor-pointer"}`}
+                  opacity={stranger ? common.opacity * 0.7 : common.opacity}
                 >
                   {!isMe && <title>{n.label}</title>}
                   <circle
                     r={n.r + 2}
                     style={{
                       fill: "var(--color-surface-2)",
-                      stroke: isMe || n.verified ? "var(--color-cyan)" : "var(--color-line)",
+                      stroke: isMe || n.verified ? "var(--color-cyan)" : stranger ? "var(--color-muted)" : "var(--color-line)",
                     }}
                     strokeWidth={2}
+                    strokeDasharray={stranger ? "3 3" : undefined}
                   />
                   {n.avatar ? (
                     <image
@@ -600,24 +705,28 @@ export function BrainGraph({ connections, highlightIds = null, sealed }: Props) 
                     </text>
                   )}
                   {!isMe && (
-                    <text
-                      y={n.r + 14}
-                      textAnchor="middle"
-                      fontSize={10}
-                      className="pointer-events-none font-mono"
+                    // Nome logo abaixo da bolha, com tamanho fixo na tela (desfaz a escala do zoom).
+                    <g
+                      transform={`translate(0 ${n.r + 2})`}
+                      className="pointer-events-none"
                       aria-hidden
-                      paintOrder="stroke"
-                      strokeWidth={3}
-                      strokeLinejoin="round"
-                      style={{
-                        fill: "var(--color-text)",
-                        stroke: "var(--color-ink)",
-                        opacity: names || (active && active.has(n.id)) ? 1 : 0,
-                        transition: "opacity 180ms ease-out",
-                      }}
+                      style={{ opacity: labels.has(n.id) ? 1 : 0, transition: "opacity 180ms ease-out" }}
                     >
-                      {truncate(n.label, 16)}
-                    </text>
+                      <g style={{ transform: "scale(var(--ik, 1))" }}>
+                        <text
+                          y={12}
+                          textAnchor="middle"
+                          fontSize={LABEL_FONT}
+                          className="font-mono"
+                          paintOrder="stroke"
+                          strokeWidth={3}
+                          strokeLinejoin="round"
+                          style={{ fill: stranger ? "var(--color-muted)" : "var(--color-text)", stroke: "var(--color-ink)" }}
+                        >
+                          {truncate(n.label, LABEL_CHARS)}
+                        </text>
+                      </g>
+                    </g>
                   )}
                 </g>
               );

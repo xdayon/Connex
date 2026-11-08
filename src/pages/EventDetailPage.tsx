@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
-import { CalendarX, Check, ChevronDown, Copy, ExternalLink, MapPin, QrCode, Share2, Users } from "lucide-react";
+import { CalendarX, Check, ChevronDown, Copy, ExternalLink, List, MapPin, Network, QrCode, Share2, Users } from "lucide-react";
+import { EventBrain } from "../components/event/EventBrain";
 import { PersonSheet } from "../components/event/PersonSheet";
 import { PresenceProofSheet } from "../components/PresenceProofSheet";
 import { PresenceQrSheet } from "../components/PresenceQrSheet";
@@ -44,6 +45,8 @@ export function EventDetailPage() {
   const currentId = useCurrentEventId();
   const [selected, setSelected] = useState<EventPerson | null>(null);
   const [filter, setFilter] = useState<Filter | null>(null);
+  // Quem está aqui: em lista ou no Brain do evento.
+  const [peopleView, setPeopleView] = useState<"list" | "graph">("list");
   const [inviteOpen, setInviteOpen] = useState<boolean | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
   const [params, setParams] = useSearchParams();
@@ -212,10 +215,30 @@ export function EventDetailPage() {
       ) : (
         <>
           <div>
-            <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
-              <Users size={18} className="text-lilac" aria-hidden />
-              {t.whosHere(scored.length)}
-            </h2>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
+                <Users size={18} className="text-lilac" aria-hidden />
+                {t.whosHere(scored.length)}
+              </h2>
+              <div role="group" aria-label={strings.brain.viewLabel} className="flex shrink-0 rounded-full border border-line bg-surface-2 p-0.5">
+                {(["graph", "list"] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    aria-pressed={peopleView === v}
+                    aria-label={v === "list" ? strings.brain.viewList : strings.brain.viewGraph}
+                    onClick={() => setPeopleView(v)}
+                    className={`inline-flex size-10 items-center justify-center rounded-full transition ${peopleView === v ? "bg-cyan text-ink" : "text-muted"}`}
+                  >
+                    {v === "list" ? <List size={16} aria-hidden /> : <Network size={16} aria-hidden />}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {peopleView === "graph" ? (
+              <EventBrain eventId={event.id} people={scored.map((x) => x.p)} onPerson={setSelected} />
+            ) : (
+            <>
             <div className="mb-3 flex flex-wrap gap-2">
               <Chip selected={activeFilter === "matches"} onClick={() => setFilter("matches")}>
                 {t.matches}
@@ -267,6 +290,8 @@ export function EventDetailPage() {
                   </li>
                 ))}
               </ul>
+            )}
+            </>
             )}
           </div>
 
