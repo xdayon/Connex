@@ -1,0 +1,14 @@
+# Cabeçalhos de segurança dos arquivos estáticos (Workers Static Assets).
+# HSTS vem da zona connex.contact (SSL/TLS > Edge Certificates).
+#
+# CSP: só scripts do próprio domínio (sem inline, sem eval). connect-src fica aberto a https/wss
+# porque a Mobile Wallet Adapter usa ws://localhost e um relay wss configurável, e o RPC pode
+# vir de VITE_SOLANA_RPC_URL. frame-ancestors 'none' impede que outro site embuta o app
+# (clickjacking em cima de pedidos de assinatura da carteira).
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https: wss: ws://localhost:* ws://127.0.0.1:*; media-src 'self' blob:; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin-allow-popups

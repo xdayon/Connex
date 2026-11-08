@@ -392,6 +392,26 @@ do $$ begin
 end $$;
 
 reset role;
+-- Aniversário (20261108000005/6): partes públicas para logados; a coluna antiga birthday nunca é legível.
+do $$ begin
+  if not has_column_privilege('authenticated', 'public.profiles', 'birth_day', 'SELECT')
+     or not has_column_privilege('authenticated', 'public.profiles', 'birth_year', 'UPDATE') then
+    raise exception 'FAIL: birth_day/birth_year sem privilégio para authenticated';
+  end if;
+  if has_column_privilege('authenticated', 'public.profiles', 'birthday', 'SELECT')
+     or has_column_privilege('anon', 'public.profiles', 'birth_day', 'SELECT') then
+    raise exception 'FAIL: coluna de aniversário exposta além do previsto';
+  end if;
+  begin
+    update public.profiles set birth_day = 31, birth_month = 4 where id = '00000000-0000-0000-0000-00000000000b';
+    raise exception 'FAIL: aceitou 31/04';
+  exception when check_violation then null; end;
+  begin
+    update public.profiles set birth_day = 29, birth_month = 2, birth_year = 2023 where id = '00000000-0000-0000-0000-00000000000b';
+    raise exception 'FAIL: aceitou 29/02/2023';
+  exception when check_violation then null; end;
+end $$;
+
 do $$ begin
   if (select display_name from public.profiles where id = '00000000-0000-0000-0000-00000000000b') <> 'Bob' then
     raise exception 'FAIL: A editou o perfil de B';

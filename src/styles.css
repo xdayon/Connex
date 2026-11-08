@@ -3,15 +3,15 @@
 @import "@fontsource-variable/geist-mono";
 
 @theme {
-  /* Escuro azulado (não preto chapado), ciano + lilás. */
-  --color-ink: #12141e;
-  --color-surface: #191c29;
-  --color-surface-2: #212536;
-  --color-line: #2e3347;
-  --color-text: #e9ecf5;
-  --color-muted: #8d94ab;
-  --color-cyan: #3de0f5;
-  --color-lilac: #b99cff;
+  /* Direção "Neural" (08/11): azul-noite profundo, ciano elétrico saturado + violeta neon. */
+  --color-ink: #0a0d16;
+  --color-surface: #111522;
+  --color-surface-2: #181d2e;
+  --color-line: #252b40;
+  --color-text: #e8ecf6;
+  --color-muted: #8890a8;
+  --color-cyan: #00e1ff;
+  --color-lilac: #a77bff;
   --color-danger: #ff6b8a;
 
   --font-display: "Geist Variable", ui-sans-serif, system-ui, sans-serif;

@@ -182,6 +182,9 @@ export const strings = {
     frame: "Scan frame",
     errorTitle: "Couldn't start the camera",
     cameraBlockedInsecure: "Camera needs a secure connection.",
+    scanPhoto: "Scan from a photo",
+    scanPhotoAlt: "Camera not working? Scan from a photo",
+    photoNoCode: "No QR code found in that photo",
   },
   connections: {
     title: "Network",

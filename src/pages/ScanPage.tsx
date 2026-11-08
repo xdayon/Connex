@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import type QrScanner from "qr-scanner";
-import { CameraOff, FlipHorizontal2, Flashlight, FlashlightOff, ScanLine } from "lucide-react";
+import { CameraOff, FlipHorizontal2, Flashlight, FlashlightOff, ImageUp, ScanLine } from "lucide-react";
 import { ShareSelector } from "../components/ShareSelector";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -132,10 +132,9 @@ export function ScanPage() {
       }
       const { default: Scanner } = await import("qr-scanner");
       if (cancelled || !video.current) return;
-      if (!(await Scanner.hasCamera())) {
-        if (!cancelled) setCam("nocamera");
-        return;
-      }
+      // Sem checar hasCamera() antes: em WebViews do iOS (Phantom, Solflare) enumerateDevices
+      // volta vazio até a permissão ser dada, e o app dizia "nenhuma câmera" sem nem pedir.
+      // start() chama getUserMedia, que mostra o pedido de permissão.
       scanner = new Scanner(video.current, (r) => void onDecodedRef.current(r.data), {
         preferredCamera: "environment",
         maxScansPerSecond: 10,
@@ -153,7 +152,8 @@ export function ScanPage() {
       } catch (e) {
         if (cancelled) return;
         const name = (e as { name?: string })?.name ?? String(e);
-        setCam(/NotAllowed|Permission|denied/i.test(name) || /NotAllowed|Permission|denied/i.test(String(e)) ? "denied" : /NotFound|camera/i.test(String(e)) ? "nocamera" : "error");
+        const text = `${name} ${String(e)}`;
+        setCam(/NotAllowed|Permission|denied|Security/i.test(text) ? "denied" : /NotFound|Overconstrained|not found/i.test(text) ? "nocamera" : "error");
       }
     })().catch(() => !cancelled && setCam("error"));
 
@@ -210,6 +210,20 @@ export function ScanPage() {
     if (ok) setExpired(null);
   };
 
+  // Alternativa que funciona em qualquer WebView: tirar/escolher uma foto do QR.
+  const photoInput = useRef<HTMLInputElement>(null);
+  const scanPhoto = async (file: File | undefined) => {
+    if (photoInput.current) photoInput.current.value = "";
+    if (!file) return;
+    try {
+      const { default: Scanner } = await import("qr-scanner");
+      const r = await Scanner.scanImage(file, { returnDetailedScanResult: true });
+      await onDecodedRef.current(r.data);
+    } catch {
+      toast(t.photoNoCode, "error");
+    }
+  };
+
   expiredRef.current = expired;
   const problem = cam === "denied" || cam === "nocamera" || cam === "error";
 
@@ -228,11 +242,16 @@ export function ScanPage() {
           title={cam === "denied" ? t.deniedTitle : cam === "nocamera" ? t.noCameraTitle : t.errorTitle}
           hint={cam === "denied" ? t.deniedBody : cam === "nocamera" ? t.noCameraBody : window.isSecureContext ? t.noCameraBody : t.cameraBlockedInsecure}
           action={
-            cam !== "nocamera" && (
-              <Button onClick={() => setAttempt((a) => a + 1)} variant="secondary">
-                {t.retry}
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => photoInput.current?.click()} icon={<ImageUp size={16} aria-hidden />}>
+                {t.scanPhoto}
               </Button>
-            )
+              {cam !== "nocamera" && (
+                <Button onClick={() => setAttempt((a) => a + 1)} variant="secondary">
+                  {t.retry}
+                </Button>
+              )}
+            </div>
           }
         />
       ) : (
@@ -268,6 +287,18 @@ export function ScanPage() {
             )}
           </div>
         </div>
+      )}
+
+      <input ref={photoInput} type="file" accept="image/*" capture="environment" hidden onChange={(e) => void scanPhoto(e.target.files?.[0])} />
+      {!problem && (
+        <button
+          type="button"
+          onClick={() => photoInput.current?.click()}
+          className="-mt-2 inline-flex min-h-11 items-center gap-2 self-center text-sm text-muted hover:text-text"
+        >
+          <ImageUp size={16} aria-hidden />
+          {t.scanPhotoAlt}
+        </button>
       )}
 
       <form onSubmit={submitHandle} className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4" noValidate>
