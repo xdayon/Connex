@@ -240,7 +240,7 @@ export function BadgePage() {
         <div key={pulse} className={`relative rounded-[28px] bg-white p-3 ring-2 ring-cyan/70 ${pulse > 1 ? "anim-qr-pulse" : ""}`}>
           {tried ? (
             <div className={`transition-[filter,opacity] duration-300 ${idle ? "opacity-40 blur-[3px]" : ""}`}>
-              <QRCode value={url} size={272} label={strings.badge.qrLabel} />
+              <QRCode value={url} size={272} label={strings.badge.qrLabel} withLogo />
             </div>
           ) : (
             <div className="size-68 animate-pulse rounded-2xl bg-line" aria-label={strings.badge.tokenLoading} />

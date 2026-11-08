@@ -5,7 +5,7 @@ import { strings } from "../i18n/strings";
 import { useCurrentEventId } from "../lib/currentEvent";
 import { supabase } from "../lib/supabase";
 import { useAsync } from "../lib/useAsync";
-import { Wordmark } from "./Logo";
+import { Logo, Wordmark } from "./Logo";
 import { Skeleton } from "./ui/Skeleton";
 
 const tabs: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
@@ -28,7 +28,7 @@ function EventChip() {
     <Link
       to="/events"
       aria-label={`${strings.header.event}: ${data.name}`}
-      className="inline-flex h-9 max-w-[55%] items-center gap-2 rounded-full border border-line bg-surface px-3 text-sm text-text"
+      className="inline-flex h-9 max-w-full min-w-0 items-center gap-2 rounded-full border border-line bg-surface px-3 text-sm text-text"
     >
       <span className="size-2 shrink-0 rounded-full bg-cyan" aria-hidden />
       <span className="truncate">{data.name}</span>
@@ -40,9 +40,13 @@ export function AppShell() {
   const { pathname } = useLocation();
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-120 flex-col">
-      <header className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-ink/85 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur">
+      <header className="sticky top-0 z-30 grid grid-cols-[1fr_auto_1fr] items-center gap-3 bg-ink/85 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur">
+        {/* Teste: símbolo à esquerda, nome no centro exato, evento à direita. */}
+        <Logo size={28} className="justify-self-start" />
         <Wordmark />
-        <EventChip />
+        <div className="flex min-w-0 justify-end">
+          <EventChip />
+        </div>
       </header>
       <main className="flex-1 px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4">
         <Suspense fallback={<Skeleton className="h-64 w-full" />}>
