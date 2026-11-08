@@ -13,14 +13,10 @@ export function LandingPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-120 flex-col px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(2rem+env(safe-area-inset-top))]">
       <section className="flex flex-1 flex-col items-center pt-4 text-center">
-        <Logo size={96} />
-        <h1 className="mt-4">
-          <span className="sr-only">{strings.app.name}</span>
-          <span aria-hidden>
-            <Wordmark showLogo={false} textClassName="text-5xl" />
-          </span>
+        <h1 className="mt-6">
+          <Wordmark textClassName="text-5xl" />
         </h1>
-        <p className="mt-6 font-display text-3xl font-bold leading-[1.1] tracking-[-0.03em]">{t.headline}</p>
+        <p className="mt-8 font-display text-3xl font-bold leading-[1.1] tracking-[-0.03em]">{t.headline}</p>
         <p className="mt-4 max-w-84 text-base text-muted">{t.subline}</p>
         <div
           aria-hidden
@@ -72,13 +68,17 @@ export function LandingPage() {
         </ol>
       </section>
 
-      <footer className="mt-10 flex justify-center gap-6 text-sm text-muted">
-        <Link to="/legal/terms" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
-          {t.terms}
-        </Link>
-        <Link to="/legal/privacy" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
-          {t.privacy}
-        </Link>
+      <footer className="mt-14 flex flex-col items-center gap-4 text-sm text-muted">
+        {/* O símbolo fica aqui, longe do nome escrito no topo. */}
+        <Logo size={44} />
+        <div className="flex gap-6">
+          <Link to="/legal/terms" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+            {t.terms}
+          </Link>
+          <Link to="/legal/privacy" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
+            {t.privacy}
+          </Link>
+        </div>
       </footer>
     </div>
   );

@@ -23,24 +23,23 @@ export function Logo({ size = 32, withBackground = false, className }: LogoProps
   );
 }
 
-export function Wordmark({
-  size = 28,
-  textClassName = "text-[22px]",
-  showLogo = true,
-}: {
-  size?: number;
-  textClassName?: string;
-  showLogo?: boolean;
-}) {
+// Nome escrito, sem o símbolo: os dois nunca aparecem juntos (o símbolo já é um X).
+// Geist 600 com o X maior, em ciano, centralizado na altura das minúsculas.
+export function Wordmark({ textClassName = "text-[22px]" }: { textClassName?: string }) {
   return (
-    <span className="inline-flex items-center gap-2">
-      {showLogo && <Logo size={size} />}
-      {/* Geist com o X maior e centralizado na altura das minúsculas (text-box corta as sobras da fonte). */}
-      <span className={`inline-flex items-center font-sans font-semibold leading-none tracking-[-0.03em] text-text ${textClassName}`}>
-        <span className="[text-box:trim-both_ex_alphabetic]">conne</span>
-        <span className="ml-[0.01em] inline-block text-[1.35em] leading-none text-cyan [text-box:trim-both_cap_alphabetic] [text-shadow:0_0_0.22em_color-mix(in_srgb,var(--color-cyan)_75%,transparent)]">
-          X
-        </span>
+    <span
+      role="img"
+      aria-label={strings.app.name}
+      className={`inline-flex items-center font-sans font-semibold leading-none tracking-[-0.03em] text-text ${textClassName}`}
+    >
+      <span aria-hidden className="[text-box:trim-both_ex_alphabetic]">
+        conne
+      </span>
+      <span
+        aria-hidden
+        className="ml-[0.01em] inline-block text-[1.35em] leading-none text-cyan [text-box:trim-both_cap_alphabetic] [text-shadow:0_0_0.22em_color-mix(in_srgb,var(--color-cyan)_75%,transparent)]"
+      >
+        X
       </span>
     </span>
   );
