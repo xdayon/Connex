@@ -11,6 +11,8 @@
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  // Todo dia às 12:00 UTC: consulta leve ao banco para o Supabase gratuito não pausar o projeto.
+  "triggers": { "crons": ["0 12 * * *"] },
   // Públicos (já vão no bundle do app). Segredos ficam no cofre: FEE_PAYER_SECRET,
   // PROOF_SERVER_SECRET e, opcional, SOLANA_RPC_URL (Helius).
   "vars": {

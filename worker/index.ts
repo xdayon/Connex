@@ -243,4 +243,22 @@ app.post("/tips/record", async (c) => {
   return c.json({ tip });
 });
 
-export default app;
+// Agendamento diário (Cron Trigger): uma consulta leve ao banco. O plano gratuito do Supabase
+// pausa o projeto depois de uns 7 dias sem atividade; isto evita que o app saia do ar.
+async function keepDbAlive(env: Bindings): Promise<void> {
+  // get_profile é pública (a chave publicável pode chamar); um handle que não existe devolve vazio.
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/get_profile`, {
+    method: "POST",
+    headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, "content-type": "application/json" },
+    body: JSON.stringify({ p_handle: "keepalive" }),
+  });
+  console.log(JSON.stringify({ keepalive: res.status }));
+  if (!res.ok) throw new Error(`keepalive failed: ${res.status}`);
+}
+
+export default {
+  fetch: app.fetch,
+  scheduled(_event: ScheduledController, env: Bindings, ctx: ExecutionContext) {
+    ctx.waitUntil(keepDbAlive(env));
+  },
+};
