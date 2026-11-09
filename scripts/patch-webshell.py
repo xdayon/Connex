@@ -5,15 +5,18 @@ Adds what the stock shell lacks:
   * camera for getUserMedia (QR scanning), granted only to pages on the app's own host;
   * <input type=file> support (profile photo upload);
   * App Links + NFC: https://<host>/u/... and /e/... open inside the app.
+V2 (1.0.3): dark system bars and conneX colors, keyboard no longer covers inputs,
+no pull-to-refresh (it hijacked drags in the graph) and no pinch zoom.
 
 Usage: python3 scripts/patch-webshell.py android
-Idempotent: refuses to patch twice (looks for a marker).
+Idempotent: each step looks for its own marker and is skipped if present.
 """
 import pathlib
 import re
 import sys
 
 MARKER = "CONNEX_PATCH"
+MARKER_V2 = "CONNEX_PATCH_V2"
 
 
 def replace_once(text: str, old: str, new: str, where: str) -> str:
@@ -38,7 +41,8 @@ def main() -> None:
     chrome_kt = src / "WebShellChromeClient.kt"
 
     if MARKER in main_kt.read_text():
-        print("already patched")
+        print("v1 already applied")
+        patch_v2(root, app, src)
         return
 
     # --- build.gradle.kts: expose the web host to the manifest -------------------------
@@ -278,6 +282,143 @@ def main() -> None:
     )
     main_kt.write_text(k)
     print(f"patched {root} (package {pkg})")
+    patch_v2(root, app, src)
+
+
+def patch_v2(root: pathlib.Path, app: pathlib.Path, src: pathlib.Path) -> None:
+    """1.0.3: dark system bars, keyboard insets, no pull-to-refresh, no pinch zoom."""
+    main_kt = src / "MainActivity.kt"
+    k = main_kt.read_text()
+    if MARKER_V2 in k:
+        print("v2 already applied")
+        return
+
+    # The app is dark-only: fixed conneX colors instead of Material You (wallpaper) colors,
+    # and light icons on transparent system bars over the #0A0D16 background.
+    k = replace_once(
+        k,
+        "import androidx.activity.enableEdgeToEdge\n",
+        "import androidx.activity.SystemBarStyle\nimport androidx.activity.enableEdgeToEdge\n",
+        "MainActivity.kt",
+    )
+    k = replace_once(
+        k,
+        "        enableEdgeToEdge()\n",
+        "        // CONNEX_PATCH_V2: dark system bars with light icons (the app is dark-only).\n"
+        "        enableEdgeToEdge(\n"
+        "            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),\n"
+        "            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),\n"
+        "        )\n",
+        "MainActivity.kt",
+    )
+    # Pinch zoom on the whole app feels like a web page; the system font size still applies.
+    k = replace_once(k, "settings.builtInZoomControls = true\n", "settings.builtInZoomControls = false\n", "MainActivity.kt")
+    k = replace_once(
+        k,
+        "                settings.setSupportZoom(true)\n",
+        "                // CONNEX_PATCH_V2: no pinch zoom on the whole app.\n"
+        "                settings.setSupportZoom(false)\n",
+        "MainActivity.kt",
+    )
+    # With edge-to-edge (mandatory on Android 15) the keyboard covered inputs near the bottom:
+    # safeDrawing also includes the IME insets, so the WebView shrinks above the keyboard.
+    k = replace_once(
+        k,
+        "import androidx.compose.foundation.layout.systemBars\n",
+        "import androidx.compose.foundation.layout.safeDrawing\n",
+        "MainActivity.kt",
+    )
+    k = replace_once(
+        k,
+        "                .windowInsetsPadding(WindowInsets.systemBars),\n",
+        "                // CONNEX_PATCH_V2: safeDrawing = system bars + cutout + keyboard.\n"
+        "                .windowInsetsPadding(WindowInsets.safeDrawing),\n",
+        "MainActivity.kt",
+    )
+    # SwipeRefreshLayout only checks the document scroll, so dragging down in the brain graph,
+    # the avatar cropper or a scrolled sheet reloaded the whole app. The error screen keeps Retry.
+    k = replace_once(
+        k,
+        "                view.isEnabled = !hasError\n",
+        "                // CONNEX_PATCH_V2: pull-to-refresh off; it hijacked drags in the graph and cropper.\n"
+        "                view.isEnabled = false\n",
+        "MainActivity.kt",
+    )
+    main_kt.write_text(k)
+
+    manifest = app / "src/main/AndroidManifest.xml"
+    m = manifest.read_text()
+    m = replace_once(
+        m,
+        '            android:launchMode="singleTask"\n',
+        '            android:launchMode="singleTask"\n'
+        '            android:windowSoftInputMode="adjustResize"\n',
+        "AndroidManifest.xml",
+    )
+    manifest.write_text(m)
+
+    dark_theme = (
+        '    <!-- CONNEX_PATCH_V2: the app is dark-only; dark window behind the WebView. -->\n'
+        '    <style name="Theme.WebShell" parent="android:Theme.Material.NoActionBar">\n'
+        '        <item name="android:windowBackground">@color/splash_background</item>\n'
+        "    </style>\n"
+    )
+    themes = app / "src/main/res/values/themes.xml"
+    t = themes.read_text()
+    t = replace_once(
+        t,
+        '    <style name="Theme.WebShell" parent="android:Theme.Material.Light.NoActionBar" />\n',
+        dark_theme,
+        "values/themes.xml",
+    )
+    themes.write_text(t)
+    night = app / "src/main/res/values-night/themes.xml"
+    n = night.read_text()
+    n = replace_once(
+        n,
+        '    <style name="Theme.WebShell" parent="android:Theme.Material.NoActionBar" />\n',
+        dark_theme,
+        "values-night/themes.xml",
+    )
+    night.write_text(n)
+
+    theme_kt = src / "ui/theme/Theme.kt"
+    tk = theme_kt.read_text()
+    tk = replace_once(
+        tk,
+        "private val DarkColorScheme = darkColorScheme(\n"
+        "    primary = Purple80,\n"
+        "    secondary = PurpleGrey80,\n"
+        "    tertiary = Pink80\n"
+        ")\n",
+        "// CONNEX_PATCH_V2: conneX palette (Plasma), same tokens as the web app.\n"
+        "private val DarkColorScheme = darkColorScheme(\n"
+        "    primary = Color(0xFF00F0FF),\n"
+        "    onPrimary = Color(0xFF0A0D16),\n"
+        "    secondary = Color(0xFFC77DFF),\n"
+        "    tertiary = Color(0xFFC77DFF),\n"
+        "    background = Color(0xFF0A0D16),\n"
+        "    onBackground = Color(0xFFE8ECF6),\n"
+        "    surface = Color(0xFF111522),\n"
+        "    onSurface = Color(0xFFE8ECF6),\n"
+        "    surfaceVariant = Color(0xFF181D2E),\n"
+        "    onSurfaceVariant = Color(0xFF8890A8),\n"
+        "    outline = Color(0xFF252B40),\n"
+        "    error = Color(0xFFFF6B8A),\n"
+        ")\n",
+        "Theme.kt",
+    )
+    tk = replace_once(tk, "    darkTheme: Boolean = isSystemInDarkTheme(),\n", "    darkTheme: Boolean = true,\n", "Theme.kt")
+    tk = replace_once(tk, "    dynamicColor: Boolean = true,\n", "    dynamicColor: Boolean = false,\n", "Theme.kt")
+    if "import androidx.compose.ui.graphics.Color\n" not in tk:
+        tk = replace_once(
+            tk,
+            "import androidx.compose.material3.MaterialTheme\n",
+            "import androidx.compose.material3.MaterialTheme\nimport androidx.compose.ui.graphics.Color\n",
+            "Theme.kt",
+        )
+    theme_kt.write_text(tk)
+    print(f"v2 applied to {root}")
 
 
 if __name__ == "__main__":

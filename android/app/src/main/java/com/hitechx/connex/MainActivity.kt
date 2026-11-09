@@ -22,6 +22,7 @@ import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeOut
@@ -33,7 +34,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -109,7 +110,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val initialDeepLink = intent?.dataString
         addOnNewIntentListener { newIntent -> newDeepLink.value = newIntent.dataString }
-        enableEdgeToEdge()
+        // CONNEX_PATCH_V2: dark system bars with light icons (the app is dark-only).
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+        )
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
         setContent {
             WebShellTheme {
@@ -163,9 +168,10 @@ fun WebShellScreen(
                 settings.loadWithOverviewMode = false
                 settings.useWideViewPort = false
                 settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-                settings.builtInZoomControls = true
+                settings.builtInZoomControls = false
                 settings.displayZoomControls = false
-                settings.setSupportZoom(true)
+                // CONNEX_PATCH_V2: no pinch zoom on the whole app.
+                settings.setSupportZoom(false)
                 settings.javaScriptCanOpenWindowsAutomatically = true
                 settings.setSupportMultipleWindows(true)
                 settings.offscreenPreRaster = true
@@ -269,7 +275,8 @@ fun WebShellScreen(
             Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .windowInsetsPadding(WindowInsets.systemBars),
+                // CONNEX_PATCH_V2: safeDrawing = system bars + cutout + keyboard.
+                .windowInsetsPadding(WindowInsets.safeDrawing),
         swipeRefreshLayout = swipeRefreshLayout,
         isRefreshing = isRefreshing,
         isLoading = isLoading,
@@ -306,7 +313,8 @@ private fun WebViewLayer(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT,
                     )
-                view.isEnabled = !hasError
+                // CONNEX_PATCH_V2: pull-to-refresh off; it hijacked drags in the graph and cropper.
+                view.isEnabled = false
                 view.isRefreshing = isRefreshing
             },
         )

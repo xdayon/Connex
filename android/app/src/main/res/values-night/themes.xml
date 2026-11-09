@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- WebView derives prefers-color-scheme from the app theme's isLightTheme (SDK 33+), so this dark variant is what makes a page's "system" mode follow night mode. -->
-    <style name="Theme.WebShell" parent="android:Theme.Material.NoActionBar" />
+    <!-- CONNEX_PATCH_V2: the app is dark-only; dark window behind the WebView. -->
+    <style name="Theme.WebShell" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/splash_background</item>
+    </style>
 </resources>

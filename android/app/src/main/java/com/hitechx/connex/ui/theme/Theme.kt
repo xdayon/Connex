@@ -4,6 +4,7 @@ import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -11,10 +12,20 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
+// CONNEX_PATCH_V2: conneX palette (Plasma), same tokens as the web app.
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = Color(0xFF00F0FF),
+    onPrimary = Color(0xFF0A0D16),
+    secondary = Color(0xFFC77DFF),
+    tertiary = Color(0xFFC77DFF),
+    background = Color(0xFF0A0D16),
+    onBackground = Color(0xFFE8ECF6),
+    surface = Color(0xFF111522),
+    onSurface = Color(0xFFE8ECF6),
+    surfaceVariant = Color(0xFF181D2E),
+    onSurfaceVariant = Color(0xFF8890A8),
+    outline = Color(0xFF252B40),
+    error = Color(0xFFFF6B8A),
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -35,9 +46,9 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun WebShellTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true,
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
