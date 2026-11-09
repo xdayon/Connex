@@ -7,6 +7,7 @@ import { SignInSheet } from "../components/SignInSheet";
 import { strings } from "../i18n/strings";
 import { takeIntent } from "../lib/intent";
 import { supabase } from "../lib/supabase";
+import { MWA_WALLET_NAME, mwaAuthorizationCache, setSigningIn } from "../lib/walletSession";
 import type { Profile } from "../lib/types";
 
 type AuthValue = {
@@ -31,7 +32,7 @@ type Web3Wallet = SolanaWallet;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const { wallet, select, connect, connected, connecting, publicKey, signIn: walletSignIn, signMessage, disconnect } = useWallet();
+  const { wallets, wallet, select, connect, connected, connecting, publicKey, signIn: walletSignIn, signMessage, disconnect } = useWallet();
 
   const [session, setSession] = useState<Session | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
@@ -115,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setPickerOpen(false);
         await afterSignIn();
       } catch (e) {
+        console.error("[auth] sign-in failed", e);
         const msg = (e as { message?: string })?.message?.toLowerCase() ?? "";
         setError(msg.includes("redirect") || msg.includes("url") || msg.includes("domain") ? strings.wallet.redirectUrl : strings.wallet.signFailed);
       } finally {
@@ -148,8 +150,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [connected, publicKey, walletSignIn, signMessage, finishSignIn]);
 
   const chooseWallet = useCallback(
-    (name: WalletName) => {
+    async (name: WalletName) => {
       setError(null);
+      const target = wallets.find((w) => w.adapter.name === name)?.adapter;
+
+      // Caminho principal: Sign In With Solana num passo só, disparado direto do toque.
+      // Conectar antes (connect) quebra a MWA do Seeker: a autorização sem assinatura fica
+      // em cache e o signIn seguinte devolve esse cache sem sign_in_result.
+      if (target && "signIn" in target && typeof target.signIn === "function") {
+        if (running.current) return;
+        running.current = true;
+        wantSignIn.current = false;
+        setBusy(true);
+        setSigningIn(true);
+        try {
+          if (name === MWA_WALLET_NAME) await mwaAuthorizationCache.clear();
+          if (wallet?.adapter.name !== name) select(name);
+          const signIn = target.signIn.bind(target) as Web3Wallet["signIn"];
+          await finishSignIn({ signIn });
+        } finally {
+          setSigningIn(false);
+        }
+        return;
+      }
+
+      // Carteiras sem signIn: conecta e assina a mensagem SIWS montada pelo Supabase.
       setBusy(true);
       wantSignIn.current = true;
       if (wallet?.adapter.name === name) {
@@ -175,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         select(name);
       }
     },
-    [wallet, connected, publicKey, walletSignIn, signMessage, finishSignIn, connect, select],
+    [wallets, wallet, connected, publicKey, walletSignIn, signMessage, finishSignIn, connect, select],
   );
 
   const chooseDev = useCallback(async () => {
